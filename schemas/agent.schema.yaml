@@ -1,0 +1,865 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/agent.schema.yaml"
+
+title: Agent Definition
+description: >
+  Canonical versioned definition of an autonomous reasoning role within
+  the AI Organization. An Agent Definition specifies capabilities,
+  responsibilities, authority, interfaces and execution constraints.
+  It is not a running process and does not represent a specific model.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - id
+  - version
+  - name
+  - status
+  - mission
+  - responsibilities
+  - capabilities
+  - interfaces
+  - authority
+  - activation
+  - completion
+  - escalation
+  - evaluation
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  id:
+    type: string
+    pattern: "^agent_[A-Za-z0-9_-]+$"
+    description: Stable logical identifier of the Agent Definition.
+
+  version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    description: Semantic version of this Agent Definition.
+
+  name:
+    type: string
+    minLength: 1
+    maxLength: 200
+
+  description:
+    type: string
+    maxLength: 5000
+
+  status:
+    type: string
+    enum:
+      - draft
+      - active
+      - deprecated
+      - disabled
+
+  agent_class:
+    type: string
+    enum:
+      - core
+      - specialist
+      - ephemeral
+    description: >
+      Core agents are reusable organizational roles.
+      Specialist agents are activated when their expertise is required.
+      Ephemeral agents are intended for narrowly bounded temporary work.
+
+  mission:
+    type: string
+    minLength: 1
+    maxLength: 5000
+    description: >
+      Primary organizational purpose of the Agent.
+
+  responsibilities:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      minLength: 1
+      maxLength: 2000
+
+  exclusions:
+    type: array
+    description: >
+      Responsibilities explicitly outside the Agent's mandate.
+    items:
+      type: string
+      minLength: 1
+      maxLength: 2000
+    default: []
+
+  capabilities:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      type: string
+      pattern: "^[a-z][a-z0-9_.-]*$"
+    description: >
+      Semantic capabilities used for Task routing.
+      Examples: market.research, architecture.review,
+      evidence.verification.
+
+  interfaces:
+    $ref: "#/$defs/interfaces"
+
+  tools:
+    type: array
+    items:
+      $ref: "#/$defs/tool_permission"
+    default: []
+
+  memory:
+    $ref: "#/$defs/memory_policy"
+
+  authority:
+    $ref: "#/$defs/authority"
+
+  interactions:
+    $ref: "#/$defs/interactions"
+
+  activation:
+    $ref: "#/$defs/activation"
+
+  completion:
+    $ref: "#/$defs/completion"
+
+  escalation:
+    $ref: "#/$defs/escalation"
+
+  runtime_requirements:
+    $ref: "#/$defs/runtime_requirements"
+
+  resource_policy:
+    $ref: "#/$defs/resource_policy"
+
+  safety:
+    $ref: "#/$defs/safety"
+
+  evaluation:
+    $ref: "#/$defs/evaluation"
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type: string
+    format: date-time
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    additionalProperties: true
+    default: {}
+
+$defs:
+
+  interfaces:
+    type: object
+    additionalProperties: false
+
+    required:
+      - accepted_task_types
+      - accepted_inputs
+      - expected_outputs
+
+    properties:
+
+      accepted_task_types:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - research
+            - analysis
+            - planning
+            - design
+            - implementation
+            - testing
+            - review
+            - verification
+            - decision_support
+            - communication
+            - operation
+            - remediation
+            - other
+
+      accepted_inputs:
+        type: array
+        items:
+          $ref: "#/$defs/input_contract"
+        default: []
+
+      expected_outputs:
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/$defs/output_contract"
+
+  input_contract:
+    type: object
+    additionalProperties: false
+
+    required:
+      - input_type
+
+    properties:
+
+      input_type:
+        type: string
+        enum:
+          - project
+          - task
+          - artifact
+          - decision
+          - claim
+          - evidence
+          - event
+          - memory
+          - external_resource
+
+      artifact_type:
+        type: string
+        pattern: "^[a-z][a-z0-9_.-]*$"
+
+      required:
+        type: boolean
+        default: false
+
+      purpose:
+        type: string
+        maxLength: 2000
+
+  output_contract:
+    type: object
+    additionalProperties: false
+
+    required:
+      - output_type
+
+    properties:
+
+      output_type:
+        type: string
+        enum:
+          - artifact
+          - decision_proposal
+          - claim
+          - evidence
+          - event
+          - task_proposal
+          - external_action
+
+      artifact_type:
+        type: string
+        pattern: "^[a-z][a-z0-9_.-]*$"
+
+      schema_ref:
+        type: string
+
+      required:
+        type: boolean
+        default: true
+
+      description:
+        type: string
+        maxLength: 3000
+
+  tool_permission:
+    type: object
+    additionalProperties: false
+
+    required:
+      - capability
+      - access
+
+    properties:
+
+      capability:
+        type: string
+        pattern: "^[a-z][a-z0-9_.-]*$"
+        description: >
+          Abstract tool capability rather than vendor-specific connector.
+          Examples: web.search, github.read, database.query,
+          artifact.write.
+
+      access:
+        type: string
+        enum:
+          - read
+          - write
+          - execute
+
+      purpose:
+        type: string
+        maxLength: 2000
+
+      constraints:
+        type: array
+        items:
+          type: string
+          maxLength: 2000
+        default: []
+
+      human_approval_required:
+        type: boolean
+        default: false
+
+  memory_policy:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      readable_scopes:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - project
+            - organization
+            - private
+        default: []
+
+      writable_scopes:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - project
+            - organization
+            - private
+        default: []
+
+      readable_memory_types:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - episodic
+            - semantic
+            - project_context
+            - organizational_context
+        default: []
+
+      direct_memory_write_allowed:
+        type: boolean
+        default: false
+        description: >
+          Whether the Agent may directly create persistent Memory Records.
+          False should be preferred for most agents.
+
+      private_memory_allowed:
+        type: boolean
+        default: false
+
+      notes:
+        type: string
+        maxLength: 3000
+
+  authority:
+    type: object
+    additionalProperties: false
+
+    required:
+      - decision_permissions
+      - action_permissions
+
+    properties:
+
+      decision_permissions:
+        type: array
+        items:
+          $ref: "#/$defs/decision_permission"
+        default: []
+
+      action_permissions:
+        type: array
+        items:
+          $ref: "#/$defs/action_permission"
+        default: []
+
+      may_create_tasks:
+        type: boolean
+        default: false
+
+      may_delegate_tasks:
+        type: boolean
+        default: false
+
+      may_propose_decisions:
+        type: boolean
+        default: true
+
+      may_commit_decisions:
+        type: boolean
+        default: false
+
+      may_request_specialists:
+        type: boolean
+        default: false
+
+      may_spawn_ephemeral_agents:
+        type: boolean
+        default: false
+
+      may_modify_own_definition:
+        type: boolean
+        const: false
+
+  decision_permission:
+    type: object
+    additionalProperties: false
+
+    required:
+      - decision_type
+      - maximum_impact
+
+    properties:
+
+      decision_type:
+        type: string
+        enum:
+          - strategic
+          - product
+          - technical
+          - financial
+          - operational
+          - security
+          - privacy
+          - regulatory
+          - governance
+          - go_no_go
+          - other
+
+      maximum_impact:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+
+      commitment_allowed:
+        type: boolean
+        default: false
+
+      human_approval_required:
+        type: boolean
+        default: false
+
+  action_permission:
+    type: object
+    additionalProperties: false
+
+    required:
+      - action
+      - permission
+
+    properties:
+
+      action:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      permission:
+        type: string
+        enum:
+          - allowed
+          - propose_only
+          - human_approval
+          - prohibited
+
+      constraints:
+        type: array
+        items:
+          type: string
+          maxLength: 2000
+        default: []
+
+  interactions:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      may_request_capabilities:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^[a-z][a-z0-9_.-]*$"
+        default: []
+
+      may_review_capabilities:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^[a-z][a-z0-9_.-]*$"
+        default: []
+
+      prohibited_interactions:
+        type: array
+        items:
+          type: string
+          maxLength: 2000
+        default: []
+
+      communication_modes:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - task
+            - artifact
+            - review
+            - event
+            - decision
+            - escalation
+        default:
+          - task
+          - artifact
+          - review
+          - escalation
+
+      free_form_agent_chat_allowed:
+        type: boolean
+        default: false
+
+  activation:
+    type: object
+    additionalProperties: false
+
+    required:
+      - allowed_triggers
+
+    properties:
+
+      allowed_triggers:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - human_request
+            - task_assignment
+            - workflow_step
+            - event
+            - review_request
+            - escalation
+
+      event_patterns:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          maxLength: 300
+        default: []
+
+      requires_active_project:
+        type: boolean
+        default: true
+
+      ambient_activation_allowed:
+        type: boolean
+        const: false
+
+  completion:
+    type: object
+    additionalProperties: false
+
+    required:
+      - conditions
+
+    properties:
+
+      conditions:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          minLength: 1
+          maxLength: 3000
+
+      must_produce_required_outputs:
+        type: boolean
+        default: true
+
+      self_assessment_required:
+        type: boolean
+        default: false
+
+  escalation:
+    type: object
+    additionalProperties: false
+
+    required:
+      - triggers
+
+    properties:
+
+      triggers:
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/$defs/escalation_trigger"
+
+      default_target:
+        type: string
+        enum:
+          - orchestrator
+          - specialist
+          - reviewer
+          - human
+          - security
+          - governance
+
+  escalation_trigger:
+    type: object
+    additionalProperties: false
+
+    required:
+      - condition
+      - target
+
+    properties:
+
+      condition:
+        type: string
+        minLength: 1
+        maxLength: 3000
+
+      target:
+        type: string
+        enum:
+          - orchestrator
+          - specialist
+          - reviewer
+          - human
+          - security
+          - governance
+
+      severity:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+
+  runtime_requirements:
+    type: object
+    additionalProperties: false
+
+    description: >
+      Model-independent runtime requirements used by the future
+      Model Router.
+
+    properties:
+
+      reasoning_level:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+
+      context_requirement:
+        type: string
+        enum:
+          - small
+          - medium
+          - large
+
+      tool_use_required:
+        type: boolean
+        default: false
+
+      web_access_required:
+        type: boolean
+        default: false
+
+      code_execution_required:
+        type: boolean
+        default: false
+
+      multimodal_required:
+        type: boolean
+        default: false
+
+      structured_output_required:
+        type: boolean
+        default: true
+
+      independent_model_review_preferred:
+        type: boolean
+        default: false
+
+      latency_sensitivity:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+
+      cost_sensitivity:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+
+  resource_policy:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      default_max_attempts:
+        type: integer
+        minimum: 1
+        maximum: 100
+
+      default_token_budget:
+        type: integer
+        minimum: 0
+
+      default_timeout_seconds:
+        type: integer
+        minimum: 1
+
+      default_monetary_budget:
+        $ref: "#/$defs/money"
+
+      concurrent_tasks_allowed:
+        type: boolean
+        default: false
+
+      max_concurrent_tasks:
+        type: integer
+        minimum: 1
+
+  safety:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      prohibited_data_classes:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      prohibited_actions:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      mandatory_reviews:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      notes:
+        type: string
+        maxLength: 5000
+
+  evaluation:
+    type: object
+    additionalProperties: false
+
+    required:
+      - metrics
+
+    properties:
+
+      metrics:
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/$defs/evaluation_metric"
+
+      minimum_acceptance_score:
+        type: number
+        minimum: 0
+        maximum: 1
+
+      evaluation_frequency:
+        type: string
+        enum:
+          - every_run
+          - sampled
+          - high_risk_only
+          - periodic
+
+  evaluation_metric:
+    type: object
+    additionalProperties: false
+
+    required:
+      - metric
+
+    properties:
+
+      metric:
+        type: string
+        pattern: "^[a-z][a-z0-9_.-]*$"
+
+      weight:
+        type: number
+        minimum: 0
+        maximum: 1
+
+      description:
+        type: string
+        maxLength: 3000
+
+  money:
+    type: object
+    additionalProperties: false
+
+    required:
+      - currency
+      - amount
+
+    properties:
+
+      currency:
+        type: string
+        pattern: "^[A-Z]{3}$"
+
+      amount:
+        type: number
+        minimum: 0
