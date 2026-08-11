@@ -1,32 +1,638 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/task.schema.yaml"
+
+title: Task
+description: >
+  Canonical representation of a bounded unit of organizational work.
+  A Task defines intent, inputs, expected outputs, execution constraints
+  and completion criteria. Actual execution attempts are represented
+  separately as Runs.
+
 type: object
-name: task
+additionalProperties: false
+
 required:
+  - schema_version
   - id
+  - organization_id
   - project_id
   - title
-  - description
+  - purpose
+  - task_type
   - status
+  - priority
+  - execution_mode
+  - created_by
+  - completion_criteria
+  - execution_policy
   - created_at
+
 properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
   id:
     type: string
+    pattern: "^task_[A-Za-z0-9_-]+$"
+    description: Stable unique identifier for the Task.
+
+  organization_id:
+    type: string
+    pattern: "^org_[A-Za-z0-9_-]+$"
+
   project_id:
     type: string
+    pattern: "^proj_[A-Za-z0-9_-]+$"
+
+  parent_task_id:
+    type: string
+    pattern: "^task_[A-Za-z0-9_-]+$"
+    description: >
+      Optional parent Task when this Task is part of a decomposition.
+
+  objective_id:
+    type: string
+    pattern: "^obj_[A-Za-z0-9_-]+$"
+    description: >
+      Optional reference to the Objective advanced by this Task.
+      Objective entities will be formalized separately.
+
+  created_from_decision_id:
+    type: string
+    pattern: "^dec_[A-Za-z0-9_-]+$"
+    description: >
+      Optional Decision whose commitment caused this Task to exist.
+
   title:
     type: string
+    minLength: 1
+    maxLength: 300
+
+  purpose:
+    type: string
+    minLength: 1
+    maxLength: 5000
+    description: >
+      The organizational reason this Task exists and the outcome
+      it is intended to advance.
+
   description:
     type: string
+    maxLength: 10000
+    description: >
+      Additional operational description of the work.
+
+  task_type:
+    type: string
+    enum:
+      - research
+      - analysis
+      - planning
+      - design
+      - implementation
+      - testing
+      - review
+      - verification
+      - decision_support
+      - communication
+      - operation
+      - remediation
+      - other
+
   status:
     type: string
-    enum: [queued, running, blocked, review, done, failed]
-  assignee:
+    enum:
+      - pending
+      - ready
+      - in_progress
+      - blocked
+      - in_review
+      - completed
+      - failed
+      - cancelled
+
+  priority:
     type: string
-  created_at:
+    enum:
+      - low
+      - normal
+      - high
+      - urgent
+
+  execution_mode:
     type: string
-    format: date-time
+    enum:
+      - deterministic
+      - agentic
+      - human
+      - hybrid
+    description: >
+      Defines the preferred execution paradigm.
+      Agentic execution should only be used when reasoning provides
+      material value over deterministic mechanisms.
+
+  assignment:
+    $ref: "#/$defs/assignment"
+
+  dependencies:
+    type: array
+    items:
+      $ref: "#/$defs/dependency"
+    default: []
+
+  inputs:
+    type: array
+    items:
+      $ref: "#/$defs/input_reference"
+    default: []
+
+  context_requirements:
+    type: array
+    description: >
+      Information that the future Context Compiler must make available
+      to the executor when relevant.
+    items:
+      type: string
+      minLength: 1
+      maxLength: 2000
+    default: []
+
+  expected_outputs:
+    type: array
+    items:
+      $ref: "#/$defs/expected_output"
+    default: []
+
+  completion_criteria:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/completion_criterion"
+
+  authority:
+    $ref: "#/$defs/task_authority"
+
+  execution_policy:
+    $ref: "#/$defs/execution_policy"
+
+  risk:
+    $ref: "#/$defs/risk"
+
   due_at:
     type: string
     format: date-time
-  priority:
+
+  created_by:
+    $ref: "#/$defs/actor"
+
+  created_at:
     type: string
-    enum: [low, medium, high, critical]
+    format: date-time
+
+  updated_at:
+    type: string
+    format: date-time
+
+  completed_at:
+    type: string
+    format: date-time
+
+  cancelled_at:
+    type: string
+    format: date-time
+
+  completed_by_run_id:
+    type: string
+    pattern: "^run_[A-Za-z0-9_-]+$"
+
+  completion_summary:
+    type: string
+    maxLength: 5000
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    description: >
+      Optional non-canonical extension metadata.
+      Core organizational logic must not depend on undocumented fields.
+    additionalProperties: true
+    default: {}
+
+allOf:
+
+  - if:
+      properties:
+        status:
+          const: completed
+
+    then:
+      required:
+        - completed_at
+
+  - if:
+      properties:
+        status:
+          const: cancelled
+
+    then:
+      required:
+        - cancelled_at
+
+$defs:
+
+  actor:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor_type
+      - actor_id
+
+    properties:
+
+      actor_type:
+        type: string
+        enum:
+          - human
+          - agent
+          - workflow
+          - system
+          - tool
+
+      actor_id:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      display_name:
+        type: string
+        maxLength: 300
+
+  assignment:
+    type: object
+    additionalProperties: false
+
+    required:
+      - mode
+
+    properties:
+
+      mode:
+        type: string
+        enum:
+          - unassigned
+          - specific_actor
+          - capability_routing
+
+      executor:
+        $ref: "#/$defs/actor"
+
+      required_capabilities:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 300
+        default: []
+
+      preferred_capabilities:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 300
+        default: []
+
+      notes:
+        type: string
+        maxLength: 2000
+
+    allOf:
+
+      - if:
+          properties:
+            mode:
+              const: specific_actor
+
+        then:
+          required:
+            - executor
+
+      - if:
+          properties:
+            mode:
+              const: capability_routing
+
+        then:
+          properties:
+            required_capabilities:
+              minItems: 1
+
+  dependency:
+    type: object
+    additionalProperties: false
+
+    required:
+      - task_id
+      - relation
+
+    properties:
+
+      task_id:
+        type: string
+        pattern: "^task_[A-Za-z0-9_-]+$"
+
+      relation:
+        type: string
+        enum:
+          - blocked_by
+          - requires_output_from
+          - related_to
+
+      optional:
+        type: boolean
+        default: false
+
+  input_reference:
+    type: object
+    additionalProperties: false
+
+    required:
+      - ref_type
+      - ref_id
+
+    properties:
+
+      ref_type:
+        type: string
+        enum:
+          - project
+          - artifact
+          - decision
+          - claim
+          - evidence
+          - memory
+          - task
+          - external_resource
+
+      ref_id:
+        type: string
+        minLength: 1
+        maxLength: 1000
+
+      required:
+        type: boolean
+        default: true
+
+      purpose:
+        type: string
+        maxLength: 2000
+
+  expected_output:
+    type: object
+    additionalProperties: false
+
+    required:
+      - output_type
+      - required
+
+    properties:
+
+      output_type:
+        type: string
+        enum:
+          - artifact
+          - decision_proposal
+          - event
+          - state_change
+          - external_action
+          - none
+
+      artifact_type:
+        type: string
+        pattern: "^[a-z][a-z0-9_.-]*$"
+
+      schema_ref:
+        type: string
+
+      required:
+        type: boolean
+
+      description:
+        type: string
+        maxLength: 3000
+
+    allOf:
+
+      - if:
+          properties:
+            output_type:
+              const: artifact
+
+        then:
+          required:
+            - artifact_type
+
+  completion_criterion:
+    type: object
+    additionalProperties: false
+
+    required:
+      - id
+      - criterion_type
+      - description
+      - required
+
+    properties:
+
+      id:
+        type: string
+        pattern: "^criterion_[A-Za-z0-9_-]+$"
+
+      criterion_type:
+        type: string
+        enum:
+          - artifact_created
+          - artifact_approved
+          - schema_valid
+          - evaluation_passed
+          - tests_passed
+          - human_approved
+          - condition_met
+          - external_confirmation
+          - custom
+
+      description:
+        type: string
+        minLength: 1
+        maxLength: 3000
+
+      target_ref:
+        type: string
+        maxLength: 1000
+
+      required:
+        type: boolean
+
+  task_authority:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      allowed_actions:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 300
+        default: []
+
+      prohibited_actions:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 300
+        default: []
+
+      human_approval_required_for:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 300
+        default: []
+
+      notes:
+        type: string
+        maxLength: 3000
+
+  execution_policy:
+    type: object
+    additionalProperties: false
+
+    required:
+      - max_attempts
+
+    properties:
+
+      max_attempts:
+        type: integer
+        minimum: 1
+        maximum: 100
+
+      timeout_seconds_per_run:
+        type: integer
+        minimum: 1
+
+      allow_parallel_runs:
+        type: boolean
+        default: false
+
+      max_parallel_runs:
+        type: integer
+        minimum: 1
+
+      token_budget:
+        type: integer
+        minimum: 0
+
+      monetary_budget:
+        type: object
+        additionalProperties: false
+
+        required:
+          - currency
+          - maximum
+
+        properties:
+
+          currency:
+            type: string
+            pattern: "^[A-Z]{3}$"
+
+          maximum:
+            type: number
+            minimum: 0
+
+      retry_on:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - transient_error
+            - tool_error
+            - timeout
+            - validation_failure
+            - evaluation_failure
+        default: []
+
+      stop_on:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - completion
+            - budget_exhausted
+            - max_attempts_reached
+            - policy_violation
+            - human_intervention
+            - critical_error
+        default:
+          - completion
+          - budget_exhausted
+          - max_attempts_reached
+          - policy_violation
+
+  risk:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      level:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+
+      domains:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - financial
+            - legal
+            - regulatory
+            - privacy
+            - security
+            - safety
+            - reputational
+            - operational
+            - technical
+
+      notes:
+        type: array
+        items:
+          type: string
