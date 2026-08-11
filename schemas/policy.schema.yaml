@@ -1,0 +1,687 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/policy.schema.yaml"
+
+title: Policy
+description: >
+  Canonical versioned organizational rule used to constrain,
+  require or govern actions, decisions, workflows, agents and resources.
+  Policies may be evaluated by humans, workflows or future policy engines.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - id
+  - version
+  - name
+  - category
+  - status
+  - enforcement_class
+  - scope
+  - rules
+  - created_at
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  id:
+    type: string
+    pattern: "^policy_[A-Za-z0-9_-]+$"
+
+  version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  name:
+    type: string
+    minLength: 1
+    maxLength: 300
+
+  description:
+    type: string
+    maxLength: 5000
+
+  category:
+    type: string
+    enum:
+      - authority
+      - security
+      - privacy
+      - evidence
+      - cost
+      - escalation
+      - memory
+      - data_governance
+      - compliance
+      - review
+      - execution
+      - model_routing
+      - other
+
+  status:
+    type: string
+    enum:
+      - draft
+      - active
+      - deprecated
+      - disabled
+
+  enforcement_class:
+    type: string
+    enum:
+      - hard
+      - controlled_override
+      - advisory
+    description: >
+      hard policies cannot be bypassed by normal project, agent,
+      task or workflow authority.
+      controlled_override policies may only be bypassed through an
+      explicitly authorized override mechanism.
+      advisory policies produce guidance but do not directly block execution.
+
+  scope:
+    $ref: "#/$defs/scope"
+
+  precedence:
+    $ref: "#/$defs/precedence"
+
+  rules:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/rule"
+
+  exceptions:
+    type: array
+    items:
+      $ref: "#/$defs/exception"
+    default: []
+
+  override_policy:
+    $ref: "#/$defs/override_policy"
+
+  evaluation:
+    $ref: "#/$defs/evaluation"
+
+  provenance:
+    $ref: "#/$defs/provenance"
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type: string
+    format: date-time
+
+  effective_from:
+    type: string
+    format: date-time
+
+  effective_until:
+    type: string
+    format: date-time
+
+  supersedes_policy_id:
+    type: string
+    pattern: "^policy_[A-Za-z0-9_-]+$"
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    additionalProperties: true
+    default: {}
+
+$defs:
+
+  actor:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor_type
+      - actor_id
+
+    properties:
+
+      actor_type:
+        type: string
+        enum:
+          - human
+          - agent
+          - workflow
+          - system
+
+      actor_id:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      display_name:
+        type: string
+        maxLength: 300
+
+  scope:
+    type: object
+    additionalProperties: false
+
+    required:
+      - level
+
+    properties:
+
+      level:
+        type: string
+        enum:
+          - organization
+          - project
+          - workflow
+          - agent
+          - task
+          - tool
+
+      organization_id:
+        type: string
+        pattern: "^org_[A-Za-z0-9_-]+$"
+
+      project_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^proj_[A-Za-z0-9_-]+$"
+        default: []
+
+      workflow_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      agent_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^agent_[A-Za-z0-9_-]+$"
+        default: []
+
+      task_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^task_[A-Za-z0-9_-]+$"
+        default: []
+
+      tool_capabilities:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^[a-z][a-z0-9_.-]*$"
+        default: []
+
+  precedence:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      tier:
+        type: string
+        enum:
+          - hard_guardrail
+          - organization
+          - project
+          - workflow
+          - agent
+          - task
+          - tool
+        description: >
+          Logical precedence tier used when multiple policies or authority
+          declarations apply.
+
+      priority:
+        type: integer
+        minimum: 0
+        maximum: 1000
+        default: 100
+        description: >
+          Ordering within the same precedence tier.
+          Priority must not be used to override a more restrictive
+          higher-precedence rule.
+
+  rule:
+    type: object
+    additionalProperties: false
+
+    required:
+      - id
+      - rule_type
+      - effect
+      - target
+
+    properties:
+
+      id:
+        type: string
+        pattern: "^rule_[A-Za-z0-9_-]+$"
+
+      description:
+        type: string
+        maxLength: 5000
+
+      rule_type:
+        type: string
+        enum:
+          - permission
+          - approval
+          - prohibition
+          - limit
+          - evidence_requirement
+          - review_requirement
+          - escalation
+          - retention
+          - data_handling
+          - execution_constraint
+          - routing_constraint
+          - other
+
+      effect:
+        type: string
+        enum:
+          - allow
+          - propose_only
+          - require_approval
+          - deny
+          - require_review
+          - require_evidence
+          - limit
+          - escalate
+          - annotate
+
+      target:
+        $ref: "#/$defs/target"
+
+      conditions:
+        type: array
+        items:
+          $ref: "#/$defs/condition"
+        default: []
+
+      requirements:
+        type: array
+        items:
+          $ref: "#/$defs/requirement"
+        default: []
+
+      limits:
+        $ref: "#/$defs/limits"
+
+      approval:
+        $ref: "#/$defs/approval_requirement"
+
+      escalation:
+        $ref: "#/$defs/escalation_requirement"
+
+      message:
+        type: string
+        maxLength: 3000
+        description: >
+          Human-readable explanation to return when the rule applies.
+
+  target:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      actions:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          minLength: 1
+          maxLength: 300
+        default: []
+
+      capabilities:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^[a-z][a-z0-9_.-]*$"
+        default: []
+
+      resource_types:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - project
+            - task
+            - run
+            - artifact
+            - decision
+            - claim
+            - evidence
+            - event
+            - memory
+            - external_resource
+            - credential
+            - personal_data
+            - sensitive_data
+            - financial_resource
+            - tool
+        default: []
+
+      decision_types:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - strategic
+            - product
+            - technical
+            - financial
+            - operational
+            - security
+            - privacy
+            - regulatory
+            - governance
+            - go_no_go
+            - other
+        default: []
+
+  condition:
+    type: object
+    additionalProperties: false
+
+    required:
+      - field
+      - operator
+      - value
+
+    properties:
+
+      field:
+        type: string
+        minLength: 1
+        maxLength: 500
+        description: >
+          Canonical context attribute evaluated by the policy engine.
+
+      operator:
+        type: string
+        enum:
+          - equals
+          - not_equals
+          - in
+          - not_in
+          - greater_than
+          - greater_than_or_equal
+          - less_than
+          - less_than_or_equal
+          - contains
+          - exists
+
+      value:
+        description: >
+          Comparison value. Interpretation depends on the operator.
+
+  requirement:
+    type: object
+    additionalProperties: false
+
+    required:
+      - requirement_type
+
+    properties:
+
+      requirement_type:
+        type: string
+        enum:
+          - human_approval
+          - peer_review
+          - security_review
+          - evidence_threshold
+          - artifact_present
+          - decision_committed
+          - evaluation_passed
+          - permission_present
+          - other
+
+      value:
+        description: >
+          Requirement-specific configuration.
+
+      description:
+        type: string
+        maxLength: 3000
+
+  limits:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      maximum_numeric_value:
+        type: number
+
+      currency:
+        type: string
+        pattern: "^[A-Z]{3}$"
+
+      maximum_count:
+        type: integer
+        minimum: 0
+
+      maximum_tokens:
+        type: integer
+        minimum: 0
+
+      maximum_duration_seconds:
+        type: integer
+        minimum: 0
+
+      maximum_parallelism:
+        type: integer
+        minimum: 1
+
+  approval_requirement:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      required:
+        type: boolean
+        default: false
+
+      approver_types:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - human
+            - agent
+            - security
+            - governance
+            - specialist
+        default: []
+
+      required_approvals:
+        type: integer
+        minimum: 1
+
+      human_required:
+        type: boolean
+        default: false
+
+  escalation_requirement:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      target:
+        type: string
+        enum:
+          - orchestrator
+          - human
+          - security
+          - governance
+          - specialist
+          - reviewer
+
+      severity:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+
+  exception:
+    type: object
+    additionalProperties: false
+
+    required:
+      - id
+      - description
+      - conditions
+
+    properties:
+
+      id:
+        type: string
+        pattern: "^exception_[A-Za-z0-9_-]+$"
+
+      description:
+        type: string
+        minLength: 1
+        maxLength: 5000
+
+      conditions:
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/$defs/condition"
+
+      requires_approval:
+        type: boolean
+        default: true
+
+      approver:
+        type: string
+        maxLength: 300
+
+      expires_at:
+        type: string
+        format: date-time
+
+  override_policy:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      override_allowed:
+        type: boolean
+        default: false
+
+      authorized_actor_types:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - human
+            - governance
+            - security
+        default: []
+
+      requires_reason:
+        type: boolean
+        default: true
+
+      requires_audit_event:
+        type: boolean
+        default: true
+
+      maximum_duration_seconds:
+        type: integer
+        minimum: 1
+
+  evaluation:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      enforcement_point:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - task_creation
+            - task_assignment
+            - before_run
+            - before_model_call
+            - before_tool_call
+            - before_decision_commit
+            - before_artifact_publish
+            - before_memory_write
+            - after_event
+        default: []
+
+      on_evaluation_error:
+        type: string
+        enum:
+          - fail_closed
+          - fail_open
+          - escalate
+        default: fail_closed
+
+  provenance:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      authored_by:
+        $ref: "#/$defs/actor"
+
+      approved_by:
+        type: array
+        items:
+          $ref: "#/$defs/actor"
+        default: []
+
+      rationale:
+        type: string
+        maxLength: 5000
+
+      source_refs:
+        type: array
+        items:
+          type: string
+        default: []
