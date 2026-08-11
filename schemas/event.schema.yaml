@@ -1,26 +1,327 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/event.schema.yaml"
+
+title: Event
+description: >
+  Canonical immutable record that something relevant occurred within or
+  outside the AI Organization. Events represent facts about occurrences
+  or state transitions and may be consumed by workflows, agents or systems.
+
 type: object
-name: event
+additionalProperties: false
+
 required:
+  - schema_version
   - id
-  - project_id
-  - type
-  - severity
+  - organization_id
+  - event_type
+  - event_class
+  - producer
+  - subject
   - occurred_at
+  - recorded_at
+
 properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
   id:
     type: string
+    pattern: "^evt_[A-Za-z0-9_-]+$"
+    description: >
+      Stable unique identifier for this Event.
+
+  organization_id:
+    type: string
+    pattern: "^org_[A-Za-z0-9_-]+$"
+
   project_id:
     type: string
-  type:
+    pattern: "^proj_[A-Za-z0-9_-]+$"
+
+  event_type:
     type: string
-    enum: [start, progress, warning, error, incident, completion]
-  severity:
+    minLength: 3
+    maxLength: 300
+    pattern: "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)+$"
+    description: >
+      Namespaced event type expressed as a fact that occurred.
+      Examples: task.completed, artifact.approved,
+      decision.committed, deployment.failed.
+
+  event_version:
     type: string
-    enum: [info, low, medium, high, critical]
-  message:
+    default: "1.0.0"
+    description: >
+      Version of the semantic event definition.
+
+  event_class:
     type: string
+    enum:
+      - domain
+      - system
+      - integration
+      - security
+      - audit
+      - external
+    description: >
+      Broad classification of the occurrence represented by the Event.
+
+  producer:
+    $ref: "#/$defs/producer"
+
+  subject:
+    $ref: "#/$defs/subject"
+
   occurred_at:
     type: string
     format: date-time
-  source:
+    description: >
+      Time at which the underlying occurrence actually happened.
+
+  recorded_at:
     type: string
+    format: date-time
+    description: >
+      Time at which the organization recorded this Event.
+
+  causation:
+    $ref: "#/$defs/causation"
+
+  correlation_id:
+    type: string
+    minLength: 1
+    maxLength: 300
+    description: >
+      Identifier used to correlate Events, Runs and workflows that belong
+      to the same broader organizational activity.
+
+  idempotency_key:
+    type: string
+    minLength: 1
+    maxLength: 500
+    description: >
+      Optional key used by consumers or ingestion systems to prevent
+      duplicate processing of the same logical occurrence.
+
+  payload:
+    $ref: "#/$defs/payload"
+
+  state_transition:
+    $ref: "#/$defs/state_transition"
+
+  sensitivity:
+    type: string
+    enum:
+      - public
+      - internal
+      - confidential
+      - restricted
+    default: internal
+    description: >
+      Information classification associated with this Event.
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    description: >
+      Optional non-canonical extension metadata.
+      Routing and core business logic should not depend on undocumented
+      fields stored here.
+    additionalProperties: true
+    default: {}
+
+$defs:
+
+  actor:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor_type
+      - actor_id
+
+    properties:
+
+      actor_type:
+        type: string
+        enum:
+          - human
+          - agent
+          - workflow
+          - system
+          - tool
+          - external
+
+      actor_id:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      display_name:
+        type: string
+        maxLength: 300
+
+  producer:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor
+
+    properties:
+
+      actor:
+        $ref: "#/$defs/actor"
+
+      component:
+        type: string
+        maxLength: 300
+        description: >
+          Optional component that emitted or recorded the Event.
+
+      source_ref:
+        type: string
+        maxLength: 1000
+        description: >
+          Optional reference to the system, connector, MCP server,
+          integration or resource from which the Event originated.
+
+  subject:
+    type: object
+    additionalProperties: false
+
+    required:
+      - subject_type
+      - subject_id
+
+    properties:
+
+      subject_type:
+        type: string
+        enum:
+          - organization
+          - project
+          - objective
+          - task
+          - run
+          - artifact
+          - claim
+          - evidence
+          - decision
+          - memory
+          - workflow
+          - agent
+          - evaluation
+          - lesson
+          - external_resource
+
+      subject_id:
+        type: string
+        minLength: 1
+        maxLength: 1000
+
+      subject_version:
+        type: string
+        maxLength: 200
+
+  causation:
+    type: object
+    additionalProperties: false
+
+    description: >
+      Identifies the organizational action or occurrence that directly
+      caused this Event when known.
+
+    properties:
+
+      event_id:
+        type: string
+        pattern: "^evt_[A-Za-z0-9_-]+$"
+
+      task_id:
+        type: string
+        pattern: "^task_[A-Za-z0-9_-]+$"
+
+      run_id:
+        type: string
+        pattern: "^run_[A-Za-z0-9_-]+$"
+
+      decision_id:
+        type: string
+        pattern: "^dec_[A-Za-z0-9_-]+$"
+
+      external_ref:
+        type: string
+        maxLength: 1000
+
+  payload:
+    type: object
+    additionalProperties: false
+
+    description: >
+      Minimal structured information specific to this Event.
+      Large documents and canonical entities should normally be referenced
+      rather than duplicated inside the Event.
+
+    properties:
+
+      schema_ref:
+        type: string
+        description: >
+          Optional schema describing the structure of data.
+
+      data:
+        description: >
+          Small structured event-specific payload.
+
+      artifact_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^art_[A-Za-z0-9_-]+$"
+        default: []
+
+      reference_uris:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+  state_transition:
+    type: object
+    additionalProperties: false
+
+    description: >
+      Optional explicit state transition represented by this Event.
+
+    required:
+      - from
+      - to
+
+    properties:
+
+      from:
+        type:
+          - string
+          - "null"
+
+      to:
+        type: string
+        minLength: 1
+
+      reason:
+        type: string
+        maxLength: 3000
