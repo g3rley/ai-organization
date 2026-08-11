@@ -1,33 +1,195 @@
-version: 1
-policy: escalation
-levels:
-  - level: 1
-    name: operational
-    description: Correção local sem impacto material.
-    response: continue_with_logging
+schema_version: "0.1.0"
 
-  - level: 2
-    name: elevated
-    description: Impacto em produtividade, qualidade ou tempo.
-    response: notify_owner_and_monitor
+id: policy_escalation_baseline
+version: "0.1.0"
 
-  - level: 3
-    name: high
-    description: Risco de segurança, compliance, reputação ou integridade.
-    response: halt_execution_and_escalate
+name: Organizational Escalation Baseline
 
-  - level: 4
-    name: critical
-    description: Impacto crítico ou inaceitável para o sistema, dados ou negócio.
-    response: emergency_stop_and_human_review
+description: >
+  Conditions under which autonomous execution must stop or request
+  higher authority, specialist review or human intervention.
+
+category: escalation
+status: active
+
+enforcement_class: controlled_override
+
+scope:
+  level: organization
+  organization_id: org_main
+
+precedence:
+  tier: organization
+  priority: 150
 
 rules:
-  - id: stop-on-risk
-    description: A execução deve ser interrompida quando a severidade for 3 ou superior.
-    condition: severity >= 3
-    action: halt
 
-  - id: approval-on-critical
-    description: Decisão crítica exige revisão humana explícita.
-    condition: severity == 4
-    action: require_human_approval
+  - id: rule_critical_risk_to_human
+
+    description: >
+      Critical organizational risk requires human escalation.
+
+    rule_type: escalation
+    effect: escalate
+
+    target:
+      actions:
+        - continue_execution
+
+    conditions:
+      - field: risk.level
+        operator: equals
+        value: critical
+
+    escalation:
+      target: human
+      severity: critical
+
+  - id: rule_security_uncertainty_to_security
+
+    description: >
+      Material security uncertainty must be escalated rather than
+      resolved through unsupported assumptions.
+
+    rule_type: escalation
+    effect: escalate
+
+    target:
+      actions:
+        - continue_security_sensitive_execution
+
+    conditions:
+      - field: security.material_uncertainty
+        operator: equals
+        value: true
+
+    escalation:
+      target: security
+      severity: high
+
+  - id: rule_policy_conflict_to_governance
+
+    description: >
+      Unresolvable conflicts between applicable Policies or authority
+      declarations must be escalated.
+
+    rule_type: escalation
+    effect: escalate
+
+    target:
+      actions:
+        - resolve_policy_conflict
+
+    escalation:
+      target: governance
+      severity: high
+
+  - id: rule_max_attempts_to_orchestrator
+
+    description: >
+      Exhausting the allowed execution attempts requires Orchestrator
+      intervention rather than indefinite retries.
+
+    rule_type: escalation
+    effect: escalate
+
+    target:
+      actions:
+        - retry_task
+
+    conditions:
+      - field: task.attempts_remaining
+        operator: less_than_or_equal
+        value: 0
+
+    escalation:
+      target: orchestrator
+      severity: medium
+
+  - id: rule_agent_disagreement_limit
+
+    description: >
+      Material disagreement that remains unresolved after the allowed
+      review cycle must be escalated rather than producing an open-ended debate.
+
+    rule_type: escalation
+    effect: escalate
+
+    target:
+      actions:
+        - continue_agent_debate
+
+    conditions:
+      - field: review.iteration_limit_reached
+        operator: equals
+        value: true
+
+    escalation:
+      target: orchestrator
+      severity: medium
+
+  - id: rule_missing_authority_to_human
+
+    description: >
+      A consequential action for which no adequate authority can be
+      established must not be executed.
+
+    rule_type: escalation
+    effect: escalate
+
+    target:
+      actions:
+        - execute_without_resolved_authority
+
+    escalation:
+      target: human
+      severity: high
+
+  - id: rule_regulatory_uncertainty
+
+    description: >
+      Material unresolved regulatory uncertainty requires specialist
+      or human review before consequential execution.
+
+    rule_type: escalation
+    effect: escalate
+
+    target:
+      actions:
+        - continue_regulated_activity
+
+    conditions:
+      - field: regulatory.material_uncertainty
+        operator: equals
+        value: true
+
+    escalation:
+      target: specialist
+      severity: high
+
+evaluation:
+
+  enforcement_point:
+    - task_assignment
+    - before_run
+    - before_tool_call
+    - before_decision_commit
+
+  on_evaluation_error: escalate
+
+provenance:
+
+  authored_by:
+    actor_type: human
+    actor_id: human_owner_001
+
+  rationale: >
+    Autonomous systems must know when to stop reasoning and request
+    additional authority or expertise.
+
+created_at: "2026-08-11T18:18:00-03:00"
+
+tags:
+  - escalation
+  - human-in-the-loop
+  - bounded-autonomy

@@ -1,26 +1,178 @@
-version: 1
-policy: authority
+schema_version: "0.1.0"
+
+id: policy_authority_baseline
+version: "0.1.0"
+
+name: Minimum Organizational Authority Baseline
+
+description: >
+  Baseline authority restrictions for consequential external,
+  financial, production and governance actions.
+
+category: authority
+status: active
+
+enforcement_class: controlled_override
+
+scope:
+  level: organization
+  organization_id: org_main
+
+precedence:
+  tier: organization
+  priority: 100
+
 rules:
-  - id: human-final-authority
-    description: Decisão final e responsabilidade residual pertencem ao humano.
-    applies_to: all
-    action: require_human_approval
-    threshold: critical
 
-  - id: scoped-agent-authority
-    description: Agentes só podem agir dentro do escopo das permissões atribuídas.
-    applies_to: agents
-    action: enforce_scope
-    threshold: all
+  - id: rule_external_spending_requires_human
 
-  - id: escalation-trigger
-    description: Quando um agente identifica risco acima do limite, deve escalar imediatamente.
-    applies_to: agents
-    action: escalate
-    threshold: medium
+    description: >
+      External spending requires explicit human approval during
+      the initial organizational maturity stage.
 
-  - id: delegated-approval
-    description: Aprovações em nível de tarefa podem ser delegadas por design, mas nunca a responsabilidade final.
-    applies_to: reviewers
-    action: delegate_with_trace
-    threshold: standard
+    rule_type: approval
+    effect: require_approval
+
+    target:
+      actions:
+        - external_spending
+        - purchase
+        - paid_subscription
+
+      resource_types:
+        - financial_resource
+
+    approval:
+      required: true
+      approver_types:
+        - human
+      required_approvals: 1
+      human_required: true
+
+    message: >
+      External financial commitments require human approval.
+
+  - id: rule_contractual_commitment_requires_human
+
+    description: >
+      Agents and workflows may prepare contractual material but may not
+      autonomously create binding organizational obligations.
+
+    rule_type: approval
+    effect: require_approval
+
+    target:
+      actions:
+        - sign_contract
+        - accept_terms
+        - create_contractual_commitment
+        - enter_legal_agreement
+
+    approval:
+      required: true
+      approver_types:
+        - human
+      required_approvals: 1
+      human_required: true
+
+  - id: rule_official_external_communication
+
+    description: >
+      Communications sent externally under the identity or authority
+      of the organization require human approval in v0.1.
+
+    rule_type: approval
+    effect: require_approval
+
+    target:
+      actions:
+        - send_external_email
+        - send_external_message
+        - publish_public_statement
+        - contact_customer
+        - contact_supplier
+        - contact_partner
+
+    approval:
+      required: true
+      approver_types:
+        - human
+      required_approvals: 1
+      human_required: true
+
+  - id: rule_production_changes_require_human
+
+    description: >
+      Production deployments and materially consequential production
+      state changes require human approval.
+
+    rule_type: approval
+    effect: require_approval
+
+    target:
+      actions:
+        - deploy_to_production
+        - modify_production_configuration
+        - production_database_migration
+        - delete_production_resource
+
+    approval:
+      required: true
+      approver_types:
+        - human
+      required_approvals: 1
+      human_required: true
+
+  - id: rule_governance_change_requires_human
+
+    description: >
+      Material changes to organizational governance must not be committed
+      autonomously by agents.
+
+    rule_type: approval
+    effect: require_approval
+
+    target:
+      actions:
+        - modify_constitution
+        - activate_policy
+        - disable_policy
+        - change_authority_model
+        - approve_agent_self_modification
+
+      decision_types:
+        - governance
+
+    approval:
+      required: true
+      approver_types:
+        - human
+      required_approvals: 1
+      human_required: true
+
+evaluation:
+
+  enforcement_point:
+    - task_creation
+    - before_run
+    - before_tool_call
+    - before_decision_commit
+
+  on_evaluation_error: fail_closed
+
+provenance:
+
+  authored_by:
+    actor_type: human
+    actor_id: human_owner_001
+
+  rationale: >
+    Initial AI Organization autonomy should remain bounded until
+    execution reliability and evaluation infrastructure are demonstrated.
+
+created_at: "2026-08-11T18:18:00-03:00"
+
+tags:
+  - governance
+  - authority
+  - human-in-the-loop

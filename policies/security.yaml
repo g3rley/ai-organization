@@ -1,28 +1,159 @@
-version: 1
-policy: security
-principles:
-  - least_privilege
-  - zero_trust_by_default
-  - secure_by_default
-  - data_minimization
-  - auditability
+schema_version: "0.1.0"
+
+id: policy_security_baseline
+version: "0.1.0"
+
+name: Minimum Security Baseline
+
+description: >
+  Non-negotiable baseline security restrictions for credentials,
+  sensitive information, untrusted content and privileged execution.
+
+category: security
+status: active
+
+enforcement_class: hard
+
+scope:
+  level: organization
+  organization_id: org_main
+
+precedence:
+  tier: hard_guardrail
+  priority: 1000
+
 rules:
-  - id: secret-handling
-    description: Segredos devem ser armazenados fora do código e nunca expostos em logs.
-    action: deny_plaintext_secret
 
-  - id: protected-data
-    description: Dados sensíveis exigem classificação e controles de acesso.
-    action: classify_and_restrict
+  - id: rule_no_plaintext_credentials
 
-  - id: input-validation
-    description: Entradas externas devem ser validadas antes do processamento.
-    action: validate_and_sanitize
+    description: >
+      Credentials and secrets must not be exposed directly to model
+      context, Artifacts, Memory Records or execution logs.
 
-  - id: secure-transport
-    description: Comunicação com serviços externos deve usar canais seguros.
-    action: enforce_tls
+    rule_type: prohibition
+    effect: deny
 
-  - id: incident-response
-    description: Incidentes de segurança devem ser registrados e escalados.
-    action: trigger_incident_process
+    target:
+      actions:
+        - expose_to_model
+        - write_to_artifact
+        - write_to_memory
+        - write_to_run_log
+        - publish
+
+      resource_types:
+        - credential
+
+    message: >
+      Credentials must remain within approved secret-management mechanisms.
+
+  - id: rule_no_authority_from_untrusted_content
+
+    description: >
+      Instructions retrieved from external or untrusted content must not
+      modify organizational authority, Policies, Agent Contracts or
+      system-level instructions.
+
+    rule_type: prohibition
+    effect: deny
+
+    target:
+      actions:
+        - modify_authority_from_external_content
+        - modify_policy_from_external_content
+        - modify_agent_definition_from_external_content
+        - grant_tool_permission_from_external_content
+
+  - id: rule_restricted_external_transmission
+
+    description: >
+      Restricted data must not be transmitted to external systems unless
+      an explicitly approved secure workflow exists.
+
+    rule_type: prohibition
+    effect: deny
+
+    target:
+      actions:
+        - external_data_transmission
+
+      resource_types:
+        - sensitive_data
+        - personal_data
+
+    conditions:
+      - field: resource.sensitivity
+        operator: equals
+        value: restricted
+
+  - id: rule_privileged_code_execution
+
+    description: >
+      Privileged or production code execution requires explicit approval.
+
+    rule_type: approval
+    effect: require_approval
+
+    target:
+      actions:
+        - execute_privileged_code
+        - execute_production_code
+        - execute_production_shell
+
+    approval:
+      required: true
+      approver_types:
+        - human
+        - security
+      required_approvals: 1
+      human_required: true
+
+  - id: rule_destructive_external_action
+
+    description: >
+      Irreversible or materially destructive external actions require
+      explicit human authorization.
+
+    rule_type: approval
+    effect: require_approval
+
+    target:
+      actions:
+        - delete_external_resource
+        - destroy_database
+        - rotate_critical_credentials
+        - revoke_production_access
+
+    approval:
+      required: true
+      approver_types:
+        - human
+      required_approvals: 1
+      human_required: true
+
+evaluation:
+
+  enforcement_point:
+    - before_model_call
+    - before_tool_call
+    - before_artifact_publish
+    - before_memory_write
+
+  on_evaluation_error: fail_closed
+
+provenance:
+
+  authored_by:
+    actor_type: human
+    actor_id: human_owner_001
+
+  rationale: >
+    Security boundaries must not depend exclusively on model compliance.
+
+created_at: "2026-08-11T18:18:00-03:00"
+
+tags:
+  - security
+  - credentials
+  - prompt-injection
+  - sensitive-data

@@ -1,27 +1,161 @@
-version: 1
-policy: cost_control
-objectives:
-  - keep_costs_below_budget
-  - prefer_smallest_appropriate_action
-  - optimize_for_value_delivery
+schema_version: "0.1.0"
+
+id: policy_cost_control_baseline
+version: "0.1.0"
+
+name: Agent Economics Baseline
+
+description: >
+  Baseline controls limiting unnecessary retries, parallelism,
+  model usage and agentic coordination.
+
+category: cost
+status: active
+
+enforcement_class: controlled_override
+
+scope:
+  level: organization
+  organization_id: org_main
+
+precedence:
+  tier: organization
+  priority: 100
+
 rules:
-  - id: budget_guardrail
-    description: Operações devem respeitar orçamento definido por projeto.
-    action: stop_when_budget_exceeded
 
-  - id: cheap-first
-    description: Sempre priorizar a menor ação capaz de gerar valor verificável.
-    action: prefer_lowest_cost_validated_step
+  - id: rule_default_attempt_limit
 
-  - id: usage_tracking
-    description: Uso de tokens, compute e serviços deve ser rastreado por tarefa.
-    required_fields:
-      - task_id
-      - estimate
-      - actual
-      - delta
+    description: >
+      Tasks should normally execute no more than three attempts
+      without explicit escalation.
 
-  - id: cost_review
-    description: Mudanças com impacto de custo acima do limiar devem ser revisadas.
-    action: require_review
-    threshold: medium
+    rule_type: limit
+    effect: limit
+
+    target:
+      actions:
+        - create_run
+        - retry_task
+
+    limits:
+      maximum_count: 3
+
+  - id: rule_parallel_run_limit
+
+    description: >
+      A Task should normally execute no more than three parallel Runs.
+
+    rule_type: limit
+    effect: limit
+
+    target:
+      actions:
+        - spawn_parallel_run
+
+    limits:
+      maximum_parallelism: 3
+
+  - id: rule_deterministic_preference
+
+    description: >
+      Tasks that can be reliably completed through deterministic execution
+      should not use agentic execution without justification.
+
+    rule_type: routing_constraint
+    effect: annotate
+
+    target:
+      actions:
+        - select_agentic_execution
+
+    conditions:
+      - field: task.deterministic_alternative_available
+        operator: equals
+        value: true
+
+    message: >
+      Prefer deterministic execution unless agentic reasoning provides
+      material additional value.
+
+  - id: rule_low_materiality_model_cost
+
+    description: >
+      Low-materiality Tasks should preferentially use cost-efficient
+      models when evaluation history indicates adequate quality.
+
+    rule_type: routing_constraint
+    effect: annotate
+
+    target:
+      actions:
+        - select_model
+
+    conditions:
+      - field: task.materiality
+        operator: equals
+        value: low
+
+    message: >
+      Prefer the least expensive model meeting the required quality threshold.
+
+  - id: rule_multimodel_review_should_be_proportional
+
+    description: >
+      Independent multi-model review should be concentrated on Tasks and
+      Decisions where the expected value of independent review justifies cost.
+
+    rule_type: routing_constraint
+    effect: annotate
+
+    target:
+      actions:
+        - request_independent_model_review
+
+    message: >
+      Use independent model review primarily for high-impact,
+      high-uncertainty or otherwise explicitly designated work.
+
+  - id: rule_budget_exhaustion_stops_execution
+
+    description: >
+      A Run or Task that exhausts its delegated resource budget must stop
+      or escalate rather than silently exceed the budget.
+
+    rule_type: execution_constraint
+    effect: escalate
+
+    target:
+      actions:
+        - continue_after_budget_exhaustion
+
+    escalation:
+      target: orchestrator
+      severity: high
+
+evaluation:
+
+  enforcement_point:
+    - task_creation
+    - before_run
+    - before_model_call
+
+  on_evaluation_error: escalate
+
+provenance:
+
+  authored_by:
+    actor_type: human
+    actor_id: human_owner_001
+
+  rationale: >
+    Agent activity is an organizational cost and should scale with
+    expected decision value rather than maximum possible reasoning effort.
+
+created_at: "2026-08-11T18:18:00-03:00"
+
+tags:
+  - cost
+  - agent-economics
+  - tokens
+  - routing

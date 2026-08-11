@@ -1,33 +1,198 @@
-version: 1
-policy: evidence
+schema_version: "0.1.0"
+
+id: policy_evidence_baseline
+version: "0.1.0"
+
+name: Evidence Quality Baseline
+
+description: >
+  Minimum epistemic requirements for material Claims and Decisions.
+
+category: evidence
+status: active
+
+enforcement_class: controlled_override
+
+scope:
+  level: organization
+  organization_id: org_main
+
+precedence:
+  tier: organization
+  priority: 200
+
 rules:
-  - id: require-evidence
-    description: Cada conclusão deve conter evidência verificável.
-    condition: outcome_accepted
-    required_fields:
-      - source
-      - verification_method
-      - timestamp
-      - result
 
-  - id: no-assertion-without-proof
-    description: Ações devem ser baseadas em dados, testes, logs ou validações.
-    condition: claim_made
-    action: reject_without_evidence
+  - id: rule_high_materiality_claim_requires_evidence
 
-  - id: artifact-linkage
-    description: Artefatos devem referenciar a tarefa ou projeto que os originou.
-    condition: artifact_created
-    required_fields:
-      - project_id
-      - task_id
-      - creator
-      - created_at
+    description: >
+      High-materiality Claims must not be treated as supported without
+      explicit Evidence.
 
-  - id: decision-traceability
-    description: Decisões devem registrar motivo e evidência de apoio.
-    condition: decision_recorded
-    required_fields:
-      - rationale
-      - evidence
-      - approver
+    rule_type: evidence_requirement
+    effect: require_evidence
+
+    target:
+      resource_types:
+        - claim
+
+    conditions:
+      - field: claim.materiality
+        operator: equals
+        value: high
+
+    requirements:
+      - requirement_type: evidence_threshold
+        value:
+          minimum_verified_evidence_items: 1
+        description: >
+          At least one relevant verified Evidence item must support
+          the Claim before it can be treated as supported.
+
+  - id: rule_critical_claim_requires_evidence
+
+    description: >
+      Critical Claims require stronger Evidence before being used as
+      established organizational knowledge.
+
+    rule_type: evidence_requirement
+    effect: require_evidence
+
+    target:
+      resource_types:
+        - claim
+
+    conditions:
+      - field: claim.materiality
+        operator: equals
+        value: critical
+
+    requirements:
+      - requirement_type: evidence_threshold
+        value:
+          minimum_verified_evidence_items: 2
+          independent_sources_preferred: true
+        description: >
+          Critical Claims require stronger verification and should
+          preferentially rely on independent sources.
+
+  - id: rule_high_impact_decision_requires_evidence
+
+    description: >
+      High-impact Decisions require explicit Evidence inputs before commitment.
+
+    rule_type: evidence_requirement
+    effect: require_evidence
+
+    target:
+      resource_types:
+        - decision
+
+    conditions:
+      - field: decision.impact.level
+        operator: equals
+        value: high
+
+    requirements:
+      - requirement_type: evidence_threshold
+        value:
+          minimum_evidence_items: 1
+
+  - id: rule_critical_decision_requires_review
+
+    description: >
+      Critical Decisions require both Evidence and independent review.
+
+    rule_type: review_requirement
+    effect: require_review
+
+    target:
+      resource_types:
+        - decision
+
+    conditions:
+      - field: decision.impact.level
+        operator: equals
+        value: critical
+
+    requirements:
+
+      - requirement_type: evidence_threshold
+        value:
+          minimum_verified_evidence_items: 2
+
+      - requirement_type: peer_review
+        description: >
+          A materially independent reviewer must assess the proposal.
+
+  - id: rule_model_output_not_evidence_by_itself
+
+    description: >
+      A model-generated assertion must not be registered as Evidence solely
+      because a language model generated or repeated it.
+
+    rule_type: prohibition
+    effect: deny
+
+    target:
+      actions:
+        - register_model_assertion_as_evidence_without_source
+        - register_model_consensus_as_independent_evidence
+
+      resource_types:
+        - evidence
+
+  - id: rule_material_contradiction_requires_review
+
+    description: >
+      Strong contradictory Evidence affecting a material Claim requires review.
+
+    rule_type: review_requirement
+    effect: require_review
+
+    target:
+      resource_types:
+        - claim
+        - evidence
+
+    conditions:
+
+      - field: evidence.relation.direction
+        operator: equals
+        value: contradicts
+
+      - field: evidence.relation.strength
+        operator: equals
+        value: strong
+
+    requirements:
+
+      - requirement_type: peer_review
+        description: >
+          Contradictory Evidence must be considered before the Claim
+          is used in a material Decision.
+
+evaluation:
+
+  enforcement_point:
+    - before_decision_commit
+    - before_artifact_publish
+    - before_memory_write
+
+  on_evaluation_error: escalate
+
+provenance:
+
+  authored_by:
+    actor_type: human
+    actor_id: human_owner_001
+
+  rationale: >
+    Repeated model assertions must not silently become organizational truth.
+
+created_at: "2026-08-11T18:18:00-03:00"
+
+tags:
+  - evidence
+  - claims
+  - epistemics
