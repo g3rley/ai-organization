@@ -1,0 +1,112 @@
+schema_version: "0.1.0"
+
+registry_version: "0.1.0"
+
+organization_id: org_main
+
+name: AI Organization Artifact Type Registry
+
+description: >
+  Canonical registry of structured Artifact types used for organizational
+  handoffs. Each Artifact type maps a semantic organizational output to a
+  versioned content schema.
+
+status: active
+
+artifact_types:
+
+  - artifact_type: strategy.product_thesis
+
+    version: "0.1.0"
+
+    name: Product Thesis
+
+    status: active
+
+    description: >
+      Structured strategic assessment describing the target customer,
+      problem, proposed value, assumptions, alternatives, Evidence state,
+      risks and unresolved strategic questions.
+
+    schema_ref: schemas/artifact-types/strategy.product_thesis.schema.yaml
+
+    default_content_mode: inline
+
+    producer_capabilities:
+      - strategy.product
+      - strategy.opportunity_assessment
+
+    recommended_review_capabilities:
+      - evidence.verification
+      - redteam.thesis_review
+
+    typical_consumers:
+      - orchestration.task_decomposition
+      - market.research
+      - customer.research
+      - decision.analysis
+
+
+  - artifact_type: research.market_report
+
+    version: "0.1.0"
+
+    name: Market Report
+
+    status: active
+
+    description: >
+      Structured external market assessment describing market boundaries,
+      segments, competitors, estimates, trends, material Claims,
+      Evidence and uncertainty.
+
+    schema_ref: schemas/artifact-types/research.market_report.schema.yaml
+
+    default_content_mode: inline
+
+    producer_capabilities:
+      - market.research
+      - market.segmentation
+      - market.sizing
+      - competitor.analysis
+
+    recommended_review_capabilities:
+      - evidence.verification
+      - evidence.quality_assessment
+
+    typical_consumers:
+      - strategy.product
+      - strategy.business
+      - finance.scenario_modeling
+      - decision.analysis
+
+
+  - artifact_type: review.evidence
+
+    version: "0.1.0"
+
+    name: Evidence Review
+
+    status: active
+
+    description: >
+      Structured independent review of material Claims, supporting and
+      contradictory Evidence, provenance, source independence, Evidence
+      gaps and epistemic sufficiency.
+
+    schema_ref: schemas/artifact-types/review.evidence.schema.yaml
+
+    default_content_mode: inline
+
+    producer_capabilities:
+      - evidence.verification
+      - evidence.quality_assessment
+      - evidence.gap_analysis
+      - evidence.synthesis
+
+    recommended_review_capabilities: []
+
+    typical_consumers:
+      - strategy.product
+      - decision.analysis
+      - orchestration.workflow_coordination

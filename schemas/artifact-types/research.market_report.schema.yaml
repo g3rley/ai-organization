@@ -1,0 +1,419 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/artifact-types/research.market_report.schema.yaml"
+
+title: Market Report Content
+
+description: >
+  Structured content contract for a Market Report Artifact.
+  The report describes the external commercial environment while preserving
+  explicit boundaries, provenance references, assumptions and uncertainty.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - executive_summary
+  - market_definition
+  - segments
+  - competitors
+  - material_claim_ids
+  - evidence_ids
+  - evidence_gaps
+  - limitations
+  - open_questions
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  executive_summary:
+    type: string
+    minLength: 1
+    maxLength: 10000
+
+  market_definition:
+    type: object
+    additionalProperties: false
+
+    required:
+      - description
+
+    properties:
+
+      description:
+        type: string
+        minLength: 1
+        maxLength: 5000
+
+      geography:
+        type: array
+        items:
+          type: string
+        default: []
+
+      customer_scope:
+        type: array
+        items:
+          type: string
+        default: []
+
+      included:
+        type: array
+        items:
+          type: string
+        default: []
+
+      excluded:
+        type: array
+        items:
+          type: string
+        default: []
+
+      timeframe:
+        type: string
+        maxLength: 1000
+
+      boundary_claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/claim_id"
+        default: []
+
+  segments:
+    type: array
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - id
+        - name
+        - description
+
+      properties:
+
+        id:
+          type: string
+          pattern: "^segment_[A-Za-z0-9_-]+$"
+
+        name:
+          type: string
+          maxLength: 300
+
+        description:
+          type: string
+          maxLength: 5000
+
+        attractiveness:
+          type: string
+          enum:
+            - unknown
+            - low
+            - medium
+            - high
+
+        rationale:
+          type: string
+          maxLength: 5000
+
+        claim_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+        evidence_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/evidence_id"
+          default: []
+
+  competitors:
+    type: array
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - name
+        - competitor_type
+
+      properties:
+
+        name:
+          type: string
+          minLength: 1
+          maxLength: 500
+
+        competitor_type:
+          type: string
+          enum:
+            - direct
+            - indirect
+            - substitute
+            - internal_process
+            - status_quo
+
+        description:
+          type: string
+          maxLength: 5000
+
+        positioning:
+          type: string
+          maxLength: 3000
+
+        strengths:
+          type: array
+          items:
+            type: string
+          default: []
+
+        weaknesses:
+          type: array
+          items:
+            type: string
+          default: []
+
+        claim_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+        evidence_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/evidence_id"
+          default: []
+
+  market_estimates:
+    type: array
+    description: >
+      Optional market estimates. TAM/SAM/SOM are not required.
+      Estimates should only be included when useful and defensible.
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - label
+        - status
+        - methodology
+
+      properties:
+
+        label:
+          type: string
+          minLength: 1
+          maxLength: 500
+
+        status:
+          type: string
+          enum:
+            - rough_range
+            - estimated
+            - insufficient_data
+
+        metric:
+          type: string
+          maxLength: 500
+
+        unit:
+          type: string
+          maxLength: 100
+
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+
+        low:
+          type: number
+
+        base:
+          type: number
+
+        high:
+          type: number
+
+        methodology:
+          type: string
+          minLength: 1
+          maxLength: 5000
+
+        assumption_claim_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+        evidence_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/evidence_id"
+          default: []
+
+  trends:
+    type: array
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - description
+
+      properties:
+
+        description:
+          type: string
+          maxLength: 5000
+
+        direction:
+          type: string
+          enum:
+            - positive
+            - negative
+            - mixed
+            - uncertain
+
+        strategic_relevance:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+
+        claim_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+        evidence_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/evidence_id"
+          default: []
+
+    default: []
+
+  material_claim_ids:
+    type: array
+    uniqueItems: true
+    items:
+      $ref: "#/$defs/claim_id"
+
+  evidence_ids:
+    type: array
+    uniqueItems: true
+    items:
+      $ref: "#/$defs/evidence_id"
+
+  contradictory_evidence_ids:
+    type: array
+    uniqueItems: true
+    items:
+      $ref: "#/$defs/evidence_id"
+    default: []
+
+  evidence_gaps:
+    type: array
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - description
+        - materiality
+
+      properties:
+
+        description:
+          type: string
+          maxLength: 3000
+
+        materiality:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+
+        related_claim_ids:
+          type: array
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+  strategic_implications:
+    type: array
+    description: >
+      Interpretations derived from the market Evidence.
+      These are not committed organizational Decisions.
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - statement
+
+      properties:
+
+        statement:
+          type: string
+          maxLength: 5000
+
+        supporting_claim_ids:
+          type: array
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    default: []
+
+  limitations:
+    type: array
+    items:
+      type: string
+      minLength: 1
+      maxLength: 3000
+
+  open_questions:
+    type: array
+    items:
+      type: string
+      minLength: 1
+      maxLength: 3000
+
+$defs:
+
+  claim_id:
+    type: string
+    pattern: "^claim_[A-Za-z0-9_-]+$"
+
+  evidence_id:
+    type: string
+    pattern: "^evd_[A-Za-z0-9_-]+$"

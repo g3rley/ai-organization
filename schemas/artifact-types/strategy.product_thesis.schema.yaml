@@ -1,0 +1,472 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/artifact-types/strategy.product_thesis.schema.yaml"
+
+title: Product Thesis Content
+
+description: >
+  Structured content contract for a Product Thesis Artifact.
+  The Artifact summarizes strategic reasoning while material factual
+  propositions remain represented through canonical Claim entities.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - thesis
+  - target_customer
+  - problem
+  - value_proposition
+  - assumptions
+  - strategic_alternatives
+  - evidence_state
+  - risks
+  - open_questions
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  thesis:
+    type: object
+    additionalProperties: false
+
+    required:
+      - statement
+
+    properties:
+
+      statement:
+        type: string
+        minLength: 1
+        maxLength: 5000
+
+      claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/claim_id"
+        default: []
+
+  target_customer:
+    type: object
+    additionalProperties: false
+
+    required:
+      - description
+
+    properties:
+
+      description:
+        type: string
+        minLength: 1
+        maxLength: 5000
+
+      claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/claim_id"
+        default: []
+
+      evidence_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/evidence_id"
+        default: []
+
+  problem:
+    type: object
+    additionalProperties: false
+
+    required:
+      - description
+
+    properties:
+
+      description:
+        type: string
+        minLength: 1
+        maxLength: 5000
+
+      severity:
+        type: string
+        enum:
+          - unknown
+          - low
+          - medium
+          - high
+          - critical
+
+      frequency:
+        type: string
+        enum:
+          - unknown
+          - rare
+          - occasional
+          - frequent
+          - continuous
+
+      claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/claim_id"
+        default: []
+
+      evidence_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/evidence_id"
+        default: []
+
+  current_alternatives:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - description
+
+      properties:
+
+        description:
+          type: string
+          maxLength: 3000
+
+        strengths:
+          type: array
+          items:
+            type: string
+          default: []
+
+        weaknesses:
+          type: array
+          items:
+            type: string
+          default: []
+
+        claim_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+    default: []
+
+  value_proposition:
+    type: object
+    additionalProperties: false
+
+    required:
+      - statement
+
+    properties:
+
+      statement:
+        type: string
+        minLength: 1
+        maxLength: 5000
+
+      expected_customer_outcomes:
+        type: array
+        items:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        default: []
+
+      claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/claim_id"
+        default: []
+
+  why_now:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      rationale:
+        type: string
+        maxLength: 5000
+
+      claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/claim_id"
+        default: []
+
+      evidence_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/evidence_id"
+        default: []
+
+  assumptions:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - claim_id
+        - importance
+
+      properties:
+
+        claim_id:
+          $ref: "#/$defs/claim_id"
+
+        importance:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+
+        validation_needed:
+          type: boolean
+          default: true
+
+        note:
+          type: string
+          maxLength: 3000
+
+  strategic_alternatives:
+    type: array
+    minItems: 2
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - id
+        - description
+
+      properties:
+
+        id:
+          type: string
+          pattern: "^alt_[A-Za-z0-9_-]+$"
+
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+
+        expected_benefits:
+          type: array
+          items:
+            type: string
+          default: []
+
+        expected_costs:
+          type: array
+          items:
+            type: string
+          default: []
+
+        risks:
+          type: array
+          items:
+            type: string
+          default: []
+
+        dependent_claim_ids:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+  evidence_state:
+    type: object
+    additionalProperties: false
+
+    required:
+      - material_claim_ids
+
+    properties:
+
+      material_claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/claim_id"
+
+      supporting_evidence_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/evidence_id"
+        default: []
+
+      contradictory_evidence_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/evidence_id"
+        default: []
+
+      evidence_gaps:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+
+          required:
+            - description
+            - materiality
+
+          properties:
+
+            description:
+              type: string
+              maxLength: 3000
+
+            related_claim_ids:
+              type: array
+              items:
+                $ref: "#/$defs/claim_id"
+              default: []
+
+            materiality:
+              type: string
+              enum:
+                - low
+                - medium
+                - high
+                - critical
+
+  success_definition:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      desired_outcomes:
+        type: array
+        items:
+          type: string
+          maxLength: 3000
+        default: []
+
+      success_metrics:
+        type: array
+        items:
+          type: string
+          maxLength: 1000
+        default: []
+
+  risks:
+    type: array
+    items:
+      $ref: "#/$defs/risk"
+
+  recommendation:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      disposition:
+        type: string
+        enum:
+          - continue_discovery
+          - investigate_specific_gap
+          - pivot_thesis
+          - prepare_go_no_go_decision
+          - recommend_stop
+          - no_recommendation
+
+      rationale:
+        type: string
+        maxLength: 5000
+
+      note:
+        type: string
+        maxLength: 3000
+
+  open_questions:
+    type: array
+    items:
+      type: string
+      minLength: 1
+      maxLength: 3000
+
+  source_artifact_ids:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      pattern: "^art_[A-Za-z0-9_-]+$"
+    default: []
+
+$defs:
+
+  claim_id:
+    type: string
+    pattern: "^claim_[A-Za-z0-9_-]+$"
+
+  evidence_id:
+    type: string
+    pattern: "^evd_[A-Za-z0-9_-]+$"
+
+  risk:
+    type: object
+    additionalProperties: false
+
+    required:
+      - description
+      - level
+
+    properties:
+
+      description:
+        type: string
+        minLength: 1
+        maxLength: 3000
+
+      level:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+
+      domain:
+        type: string
+        enum:
+          - strategic
+          - product
+          - market
+          - financial
+          - technical
+          - operational
+          - legal
+          - regulatory
+          - privacy
+          - security
+          - reputational
+          - other
+
+      related_claim_ids:
+        type: array
+        items:
+          $ref: "#/$defs/claim_id"
+        default: []

@@ -1,0 +1,341 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/artifact-types/review.evidence.schema.yaml"
+
+title: Evidence Review Content
+
+description: >
+  Structured content contract for an independent Evidence Review Artifact.
+  The review assesses material Claims and their Evidence without silently
+  modifying the underlying canonical entities.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - review_scope
+  - claim_assessments
+  - cross_cutting_issues
+  - material_gaps
+  - overall_assessment
+  - recommended_actions
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  review_scope:
+    type: object
+    additionalProperties: false
+
+    required:
+      - description
+
+    properties:
+
+      description:
+        type: string
+        minLength: 1
+        maxLength: 5000
+
+      artifact_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^art_[A-Za-z0-9_-]+$"
+        default: []
+
+      claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/claim_id"
+        default: []
+
+      decision_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^dec_[A-Za-z0-9_-]+$"
+        default: []
+
+  claim_assessments:
+    type: array
+    items:
+      $ref: "#/$defs/claim_assessment"
+
+  cross_cutting_issues:
+    type: array
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - issue_type
+        - severity
+        - description
+
+      properties:
+
+        issue_type:
+          type: string
+          enum:
+            - unsupported_claim
+            - weak_source
+            - common_source_dependency
+            - contradictory_evidence
+            - stale_evidence
+            - unverifiable_source
+            - inference_leap
+            - scope_mismatch
+            - selection_bias
+            - methodological_weakness
+            - missing_provenance
+            - other
+
+        severity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+
+        description:
+          type: string
+          maxLength: 5000
+
+        affected_claim_ids:
+          type: array
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+        affected_evidence_ids:
+          type: array
+          items:
+            $ref: "#/$defs/evidence_id"
+          default: []
+
+  material_gaps:
+    type: array
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - description
+        - materiality
+
+      properties:
+
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+
+        materiality:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+
+        related_claim_ids:
+          type: array
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+        suggested_resolution:
+          type: string
+          maxLength: 3000
+
+  overall_assessment:
+    type: object
+    additionalProperties: false
+
+    required:
+      - verdict
+      - rationale
+
+    properties:
+
+      verdict:
+        type: string
+        enum:
+          - sufficient
+          - sufficient_with_caveats
+          - insufficient
+          - contested
+          - inconclusive
+
+      rationale:
+        type: string
+        minLength: 1
+        maxLength: 10000
+
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+
+      decision_readiness:
+        type: string
+        enum:
+          - ready
+          - ready_with_caveats
+          - additional_evidence_required
+          - not_ready
+          - not_applicable
+
+  recommended_actions:
+    type: array
+
+    items:
+      type: object
+      additionalProperties: false
+
+      required:
+        - action_type
+        - description
+
+      properties:
+
+        action_type:
+          type: string
+          enum:
+            - collect_evidence
+            - verify_source
+            - revise_claim
+            - qualify_claim
+            - investigate_contradiction
+            - request_specialist
+            - repeat_analysis
+            - proceed_to_decision
+            - other
+
+        description:
+          type: string
+          maxLength: 5000
+
+        priority:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+
+        related_claim_ids:
+          type: array
+          items:
+            $ref: "#/$defs/claim_id"
+          default: []
+
+  notes:
+    type: array
+    items:
+      type: string
+      maxLength: 3000
+    default: []
+
+$defs:
+
+  claim_id:
+    type: string
+    pattern: "^claim_[A-Za-z0-9_-]+$"
+
+  evidence_id:
+    type: string
+    pattern: "^evd_[A-Za-z0-9_-]+$"
+
+  quality_level:
+    type: string
+    enum:
+      - unknown
+      - low
+      - medium
+      - high
+
+  claim_assessment:
+    type: object
+    additionalProperties: false
+
+    required:
+      - claim_id
+      - recommended_epistemic_status
+      - rationale
+
+    properties:
+
+      claim_id:
+        $ref: "#/$defs/claim_id"
+
+      recommended_epistemic_status:
+        type: string
+        enum:
+          - unverified
+          - under_review
+          - partially_supported
+          - supported
+          - contested
+          - contradicted
+          - unresolved
+
+      supporting_evidence_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/evidence_id"
+        default: []
+
+      contradicting_evidence_ids:
+        type: array
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/evidence_id"
+        default: []
+
+      evidence_quality:
+        type: object
+        additionalProperties: false
+
+        properties:
+
+          source_reliability:
+            $ref: "#/$defs/quality_level"
+
+          relevance:
+            $ref: "#/$defs/quality_level"
+
+          directness:
+            $ref: "#/$defs/quality_level"
+
+          independence:
+            $ref: "#/$defs/quality_level"
+
+          methodological_strength:
+            $ref: "#/$defs/quality_level"
+
+          recency:
+            $ref: "#/$defs/quality_level"
+
+      rationale:
+        type: string
+        minLength: 1
+        maxLength: 7000
+
+      unresolved_questions:
+        type: array
+        items:
+          type: string
+          maxLength: 3000
+        default: []
