@@ -1,0 +1,26 @@
+type: object
+name: event
+required:
+  - id
+  - project_id
+  - type
+  - severity
+  - occurred_at
+properties:
+  id:
+    type: string
+  project_id:
+    type: string
+  type:
+    type: string
+    enum: [start, progress, warning, error, incident, completion]
+  severity:
+    type: string
+    enum: [info, low, medium, high, critical]
+  message:
+    type: string
+  occurred_at:
+    type: string
+    format: date-time
+  source:
+    type: string

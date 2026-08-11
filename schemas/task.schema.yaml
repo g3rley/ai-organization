@@ -1,0 +1,32 @@
+type: object
+name: task
+required:
+  - id
+  - project_id
+  - title
+  - description
+  - status
+  - created_at
+properties:
+  id:
+    type: string
+  project_id:
+    type: string
+  title:
+    type: string
+  description:
+    type: string
+  status:
+    type: string
+    enum: [queued, running, blocked, review, done, failed]
+  assignee:
+    type: string
+  created_at:
+    type: string
+    format: date-time
+  due_at:
+    type: string
+    format: date-time
+  priority:
+    type: string
+    enum: [low, medium, high, critical]

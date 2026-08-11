@@ -1,0 +1,33 @@
+version: 1
+policy: escalation
+levels:
+  - level: 1
+    name: operational
+    description: Correção local sem impacto material.
+    response: continue_with_logging
+
+  - level: 2
+    name: elevated
+    description: Impacto em produtividade, qualidade ou tempo.
+    response: notify_owner_and_monitor
+
+  - level: 3
+    name: high
+    description: Risco de segurança, compliance, reputação ou integridade.
+    response: halt_execution_and_escalate
+
+  - level: 4
+    name: critical
+    description: Impacto crítico ou inaceitável para o sistema, dados ou negócio.
+    response: emergency_stop_and_human_review
+
+rules:
+  - id: stop-on-risk
+    description: A execução deve ser interrompida quando a severidade for 3 ou superior.
+    condition: severity >= 3
+    action: halt
+
+  - id: approval-on-critical
+    description: Decisão crítica exige revisão humana explícita.
+    condition: severity == 4
+    action: require_human_approval

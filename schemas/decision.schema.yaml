@@ -1,0 +1,30 @@
+type: object
+name: decision
+required:
+  - id
+  - project_id
+  - decision
+  - rationale
+  - status
+  - created_at
+properties:
+  id:
+    type: string
+  project_id:
+    type: string
+  decision:
+    type: string
+  rationale:
+    type: string
+  status:
+    type: string
+    enum: [proposed, approved, rejected, deferred]
+  approver:
+    type: string
+  evidence:
+    type: array
+    items:
+      type: string
+  created_at:
+    type: string
+    format: date-time

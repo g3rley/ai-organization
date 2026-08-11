@@ -1,0 +1,27 @@
+version: 1
+policy: cost_control
+objectives:
+  - keep_costs_below_budget
+  - prefer_smallest_appropriate_action
+  - optimize_for_value_delivery
+rules:
+  - id: budget_guardrail
+    description: Operações devem respeitar orçamento definido por projeto.
+    action: stop_when_budget_exceeded
+
+  - id: cheap-first
+    description: Sempre priorizar a menor ação capaz de gerar valor verificável.
+    action: prefer_lowest_cost_validated_step
+
+  - id: usage_tracking
+    description: Uso de tokens, compute e serviços deve ser rastreado por tarefa.
+    required_fields:
+      - task_id
+      - estimate
+      - actual
+      - delta
+
+  - id: cost_review
+    description: Mudanças com impacto de custo acima do limiar devem ser revisadas.
+    action: require_review
+    threshold: medium

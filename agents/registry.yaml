@@ -1,0 +1,68 @@
+version: 1
+organization: ai-organization
+agents:
+  - id: orchestrator
+    name: Orchestrator
+    role: coordena projeto, escopo, dependências e decisões de execução
+    authority: "project-level"
+    permissions:
+      - plan
+      - assign
+      - escalate
+      - monitor
+    output_contract: project
+
+  - id: researcher
+    name: Researcher
+    role: coleta contexto, analisa mercado, requisitos e evidências
+    authority: "task-level"
+    permissions:
+      - read
+      - analyze
+      - synthesize
+      - propose
+    output_contract: artifact
+
+  - id: engineer
+    name: Engineer
+    role: implementa, integra e valida mudanças de software e automação
+    authority: "task-level"
+    permissions:
+      - implement
+      - test
+      - validate
+      - document
+    output_contract: artifact
+
+  - id: reviewer
+    name: Reviewer
+    role: verifica qualidade, riscos e consistency antes da aprovação
+    authority: "approval-level"
+    permissions:
+      - review
+      - verify
+      - challenge
+      - reject
+    output_contract: decision
+
+  - id: operations
+    name: Operations
+    role: monitora incidentes, métricas e execução contínua do sistema
+    authority: "runtime-level"
+    permissions:
+      - observe
+      - triage
+      - remediate
+      - escalate
+    output_contract: event
+
+  - id: security
+    name: Security
+    role: avalia riscos de segurança, compliance e integridade
+    authority: "guardrail-level"
+    permissions:
+      - audit
+      - assess
+      - block
+      - escalate
+    output_contract: decision

@@ -1,0 +1,27 @@
+type: object
+name: project
+required:
+  - id
+  - name
+  - objective
+  - owner
+  - created_at
+properties:
+  id:
+    type: string
+  name:
+    type: string
+  objective:
+    type: string
+  owner:
+    type: string
+  created_at:
+    type: string
+    format: date-time
+  status:
+    type: string
+    enum: [discovery, planning, execution, review, operations, completed]
+  tags:
+    type: array
+    items:
+      type: string

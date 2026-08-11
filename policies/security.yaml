@@ -1,0 +1,28 @@
+version: 1
+policy: security
+principles:
+  - least_privilege
+  - zero_trust_by_default
+  - secure_by_default
+  - data_minimization
+  - auditability
+rules:
+  - id: secret-handling
+    description: Segredos devem ser armazenados fora do código e nunca expostos em logs.
+    action: deny_plaintext_secret
+
+  - id: protected-data
+    description: Dados sensíveis exigem classificação e controles de acesso.
+    action: classify_and_restrict
+
+  - id: input-validation
+    description: Entradas externas devem ser validadas antes do processamento.
+    action: validate_and_sanitize
+
+  - id: secure-transport
+    description: Comunicação com serviços externos deve usar canais seguros.
+    action: enforce_tls
+
+  - id: incident-response
+    description: Incidentes de segurança devem ser registrados e escalados.
+    action: trigger_incident_process

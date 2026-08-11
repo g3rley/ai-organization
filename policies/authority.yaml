@@ -1,0 +1,26 @@
+version: 1
+policy: authority
+rules:
+  - id: human-final-authority
+    description: Decisão final e responsabilidade residual pertencem ao humano.
+    applies_to: all
+    action: require_human_approval
+    threshold: critical
+
+  - id: scoped-agent-authority
+    description: Agentes só podem agir dentro do escopo das permissões atribuídas.
+    applies_to: agents
+    action: enforce_scope
+    threshold: all
+
+  - id: escalation-trigger
+    description: Quando um agente identifica risco acima do limite, deve escalar imediatamente.
+    applies_to: agents
+    action: escalate
+    threshold: medium
+
+  - id: delegated-approval
+    description: Aprovações em nível de tarefa podem ser delegadas por design, mas nunca a responsabilidade final.
+    applies_to: reviewers
+    action: delegate_with_trace
+    threshold: standard

@@ -1,0 +1,33 @@
+version: 1
+policy: evidence
+rules:
+  - id: require-evidence
+    description: Cada conclusão deve conter evidência verificável.
+    condition: outcome_accepted
+    required_fields:
+      - source
+      - verification_method
+      - timestamp
+      - result
+
+  - id: no-assertion-without-proof
+    description: Ações devem ser baseadas em dados, testes, logs ou validações.
+    condition: claim_made
+    action: reject_without_evidence
+
+  - id: artifact-linkage
+    description: Artefatos devem referenciar a tarefa ou projeto que os originou.
+    condition: artifact_created
+    required_fields:
+      - project_id
+      - task_id
+      - creator
+      - created_at
+
+  - id: decision-traceability
+    description: Decisões devem registrar motivo e evidência de apoio.
+    condition: decision_recorded
+    required_fields:
+      - rationale
+      - evidence
+      - approver

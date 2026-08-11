@@ -1,0 +1,30 @@
+type: object
+name: artifact
+required:
+  - id
+  - project_id
+  - task_id
+  - type
+  - created_at
+  - creator
+properties:
+  id:
+    type: string
+  project_id:
+    type: string
+  task_id:
+    type: string
+  type:
+    type: string
+    enum: [document, code, report, dataset, config, prompt]
+  created_at:
+    type: string
+    format: date-time
+  creator:
+    type: string
+  version:
+    type: string
+  checksum:
+    type: string
+  location:
+    type: string
