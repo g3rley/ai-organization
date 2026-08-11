@@ -1,0 +1,469 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/evaluation.schema.yaml"
+
+title: Evaluation
+description: >
+  Canonical representation of a concrete quality, performance,
+  safety, compliance or outcome assessment performed against an
+  organizational entity.
+
+  Evaluation Definitions describe how evaluation should occur.
+  Evaluation entities record the results of specific assessments.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - id
+  - organization_id
+  - target
+  - evaluation_kind
+  - method
+  - status
+  - evaluator
+  - criteria_results
+  - created_at
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  id:
+    type: string
+    pattern: "^eval_[A-Za-z0-9_-]+$"
+
+  organization_id:
+    type: string
+    pattern: "^org_[A-Za-z0-9_-]+$"
+
+  project_id:
+    type: string
+    pattern: "^proj_[A-Za-z0-9_-]+$"
+
+  definition_ref:
+    type: string
+    description: >
+      Reference to the reusable Evaluation Definition used for this
+      assessment, when one exists.
+
+  definition_version:
+    type: string
+    description: >
+      Version of the Evaluation Definition used.
+
+  target:
+    $ref: "#/$defs/target"
+
+  comparison_targets:
+    type: array
+    description: >
+      Additional targets used when this is a comparative Evaluation.
+    items:
+      $ref: "#/$defs/target"
+    default: []
+
+  evaluation_kind:
+    type: string
+    enum:
+      - validity
+      - quality
+      - safety
+      - compliance
+      - performance
+      - outcome
+      - comparative
+      - other
+
+  method:
+    type: string
+    enum:
+      - deterministic
+      - model_based
+      - human
+      - outcome_based
+      - mixed
+
+  status:
+    type: string
+    enum:
+      - pending
+      - running
+      - completed
+      - failed
+      - invalidated
+
+  evaluator:
+    $ref: "#/$defs/actor"
+
+  evaluator_run_id:
+    type: string
+    pattern: "^run_[A-Za-z0-9_-]+$"
+    description: >
+      Run responsible for performing this Evaluation when the assessment
+      itself required agentic or model-based execution.
+
+  independence:
+    $ref: "#/$defs/independence"
+
+  sample:
+    $ref: "#/$defs/sample"
+
+  criteria_results:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/criterion_result"
+
+  aggregate_score:
+    type: number
+    minimum: 0
+    maximum: 1
+    description: >
+      Optional normalized aggregate score.
+      The aggregation method is defined by the Evaluation Definition.
+
+  verdict:
+    type: string
+    enum:
+      - pass
+      - fail
+      - needs_revision
+      - accepted_with_conditions
+      - inconclusive
+      - not_applicable
+
+  confidence:
+    type: number
+    minimum: 0
+    maximum: 1
+    description: >
+      Confidence in the Evaluation result, not confidence in the
+      underlying target itself.
+
+  supporting_refs:
+    type: array
+    items:
+      $ref: "#/$defs/entity_ref"
+    default: []
+
+  summary:
+    type: string
+    maxLength: 10000
+
+  recommendations:
+    type: array
+    description: >
+      Non-binding recommendations resulting from the Evaluation.
+      Recommendations do not automatically modify the evaluated target.
+    items:
+      type: string
+      minLength: 1
+      maxLength: 3000
+    default: []
+
+  created_at:
+    type: string
+    format: date-time
+
+  started_at:
+    type: string
+    format: date-time
+
+  completed_at:
+    type: string
+    format: date-time
+
+  invalidated_at:
+    type: string
+    format: date-time
+
+  supersedes_evaluation_id:
+    type: string
+    pattern: "^eval_[A-Za-z0-9_-]+$"
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    additionalProperties: true
+    default: {}
+
+allOf:
+
+  - if:
+      properties:
+        status:
+          const: completed
+
+    then:
+      required:
+        - completed_at
+        - verdict
+
+  - if:
+      properties:
+        status:
+          const: invalidated
+
+    then:
+      required:
+        - invalidated_at
+
+  - if:
+      properties:
+        evaluation_kind:
+          const: comparative
+
+    then:
+      properties:
+        comparison_targets:
+          minItems: 1
+
+$defs:
+
+  actor:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor_type
+      - actor_id
+
+    properties:
+
+      actor_type:
+        type: string
+        enum:
+          - human
+          - agent
+          - workflow
+          - system
+          - tool
+
+      actor_id:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      display_name:
+        type: string
+        maxLength: 300
+
+  target:
+    type: object
+    additionalProperties: false
+
+    required:
+      - target_type
+      - target_id
+
+    properties:
+
+      target_type:
+        type: string
+        enum:
+          - project
+          - task
+          - run
+          - artifact
+          - decision
+          - agent_definition
+          - workflow_definition
+
+      target_id:
+        type: string
+        minLength: 1
+        maxLength: 1000
+
+      target_version:
+        type: string
+        description: >
+          Version of the target when applicable, especially for
+          Agent and Workflow Definitions.
+
+  independence:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      relation:
+        type: string
+        enum:
+          - self_assessment
+          - same_agent_independent_run
+          - independent_agent
+          - independent_model_family
+          - human_independent
+          - deterministic
+          - not_applicable
+
+      independent_from_actor_id:
+        type: string
+
+      independent_from_run_id:
+        type: string
+        pattern: "^run_[A-Za-z0-9_-]+$"
+
+      note:
+        type: string
+        maxLength: 3000
+
+  sample:
+    type: object
+    additionalProperties: false
+
+    description: >
+      Optional sample of organizational records used when evaluating
+      aggregate entities such as Agent or Workflow Definitions.
+
+    properties:
+
+      selection_method:
+        type: string
+        enum:
+          - all
+          - random
+          - recent
+          - risk_based
+          - manual
+          - custom
+
+      run_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^run_[A-Za-z0-9_-]+$"
+        default: []
+
+      artifact_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^art_[A-Za-z0-9_-]+$"
+        default: []
+
+      from:
+        type: string
+        format: date-time
+
+      to:
+        type: string
+        format: date-time
+
+      population_description:
+        type: string
+        maxLength: 3000
+
+  criterion_result:
+    type: object
+    additionalProperties: false
+
+    required:
+      - criterion_id
+      - result
+
+    properties:
+
+      criterion_id:
+        type: string
+        pattern: "^criterion_[A-Za-z0-9_.-]+$"
+
+      name:
+        type: string
+        maxLength: 300
+
+      result:
+        type: string
+        enum:
+          - pass
+          - fail
+          - partial
+          - inconclusive
+          - not_applicable
+
+      score:
+        type: number
+        minimum: 0
+        maximum: 1
+
+      weight:
+        type: number
+        minimum: 0
+        maximum: 1
+
+      observed_value:
+        description: >
+          Optional raw observed measurement.
+
+      threshold:
+        description: >
+          Optional acceptance threshold.
+
+      rationale:
+        type: string
+        maxLength: 5000
+
+      evaluator_confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+
+      supporting_refs:
+        type: array
+        items:
+          $ref: "#/$defs/entity_ref"
+        default: []
+
+  entity_ref:
+    type: object
+    additionalProperties: false
+
+    required:
+      - ref_type
+      - ref_id
+
+    properties:
+
+      ref_type:
+        type: string
+        enum:
+          - project
+          - task
+          - run
+          - artifact
+          - claim
+          - evidence
+          - decision
+          - event
+          - memory
+          - evaluation
+          - external_resource
+
+      ref_id:
+        type: string
+        minLength: 1
+        maxLength: 1000
+
+      relation:
+        type: string
+        enum:
+          - supports
+          - contradicts
+          - measured_from
+          - derived_from
+          - references
+          - compared_against
+          - related_to
