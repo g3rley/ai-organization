@@ -1,0 +1,417 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/evidence.schema.yaml"
+
+title: Evidence
+description: >
+  Canonical representation of information used to support,
+  contradict or contextualize one or more Claims.
+  Evidence preserves provenance and quality characteristics
+  independently from the Claims that reference it.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - id
+  - organization_id
+  - scope
+  - evidence_type
+  - title
+  - observation
+  - source
+  - verification_status
+  - captured_at
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  id:
+    type: string
+    pattern: "^evd_[A-Za-z0-9_-]+$"
+
+  organization_id:
+    type: string
+    pattern: "^org_[A-Za-z0-9_-]+$"
+
+  project_id:
+    type: string
+    pattern: "^proj_[A-Za-z0-9_-]+$"
+
+  scope:
+    type: string
+    enum:
+      - organization
+      - project
+
+  evidence_type:
+    type: string
+    enum:
+      - external_source
+      - internal_document
+      - internal_data
+      - database_result
+      - analytics
+      - experiment_result
+      - interview
+      - survey
+      - measurement
+      - direct_observation
+      - human_testimony
+      - external_dataset
+      - regulatory_source
+      - other
+
+  title:
+    type: string
+    minLength: 1
+    maxLength: 300
+
+  observation:
+    type: string
+    minLength: 1
+    maxLength: 10000
+    description: >
+      The specific information extracted, observed or measured
+      that constitutes the Evidence. It should be narrower than
+      the entire underlying source.
+
+  source:
+    $ref: "#/$defs/source"
+
+  verification_status:
+    type: string
+    enum:
+      - unverified
+      - verified
+      - disputed
+      - rejected
+      - superseded
+
+  verified_by:
+    type: array
+    items:
+      $ref: "#/$defs/verification"
+    default: []
+
+  claim_relations:
+    type: array
+    description: >
+      Explicit relationships between this Evidence and Claims.
+      One Evidence item may relate to multiple Claims.
+    items:
+      $ref: "#/$defs/claim_relation"
+    default: []
+
+  quality:
+    $ref: "#/$defs/quality"
+
+  temporal_context:
+    $ref: "#/$defs/temporal_context"
+
+  limitations:
+    type: array
+    items:
+      type: string
+      minLength: 1
+      maxLength: 3000
+    default: []
+
+  captured_by:
+    $ref: "#/$defs/actor"
+
+  captured_from_run_id:
+    type: string
+    pattern: "^run_[A-Za-z0-9_-]+$"
+
+  captured_at:
+    type: string
+    format: date-time
+
+  supersedes_evidence_id:
+    type: string
+    pattern: "^evd_[A-Za-z0-9_-]+$"
+
+  sensitivity:
+    type: string
+    enum:
+      - public
+      - internal
+      - confidential
+      - restricted
+    default: internal
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    additionalProperties: true
+    default: {}
+
+allOf:
+
+  - if:
+      properties:
+        scope:
+          const: project
+
+    then:
+      required:
+        - project_id
+
+  - if:
+      properties:
+        verification_status:
+          const: superseded
+
+    then:
+      required:
+        - supersedes_evidence_id
+
+$defs:
+
+  actor:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor_type
+      - actor_id
+
+    properties:
+
+      actor_type:
+        type: string
+        enum:
+          - human
+          - agent
+          - workflow
+          - system
+          - tool
+          - external
+
+      actor_id:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      display_name:
+        type: string
+        maxLength: 300
+
+  source:
+    type: object
+    additionalProperties: false
+
+    required:
+      - source_kind
+
+    properties:
+
+      source_kind:
+        type: string
+        enum:
+          - web
+          - document
+          - dataset
+          - database
+          - analytics_system
+          - experiment
+          - interview
+          - survey
+          - measurement_system
+          - human
+          - internal_system
+          - external_system
+          - other
+
+      source_id:
+        type: string
+        maxLength: 1000
+
+      uri:
+        type: string
+        maxLength: 3000
+
+      title:
+        type: string
+        maxLength: 1000
+
+      publisher:
+        type: string
+        maxLength: 500
+
+      author:
+        type: string
+        maxLength: 500
+
+      published_at:
+        type: string
+        format: date-time
+
+      retrieved_at:
+        type: string
+        format: date-time
+
+      locator:
+        type: string
+        maxLength: 1000
+        description: >
+          Specific page, section, table, query, record or other
+          locator inside the underlying source.
+
+      access_method:
+        type: string
+        enum:
+          - direct
+          - web
+          - api
+          - mcp
+          - connector
+          - database_query
+          - manual
+          - imported
+          - other
+
+      checksum:
+        type: string
+        pattern: "^sha256:[A-Fa-f0-9]{64}$"
+
+  verification:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor
+      - verdict
+      - verified_at
+
+    properties:
+
+      actor:
+        $ref: "#/$defs/actor"
+
+      verdict:
+        type: string
+        enum:
+          - verified
+          - disputed
+          - rejected
+
+      method:
+        type: string
+        maxLength: 2000
+
+      note:
+        type: string
+        maxLength: 5000
+
+      verified_at:
+        type: string
+        format: date-time
+
+  claim_relation:
+    type: object
+    additionalProperties: false
+
+    required:
+      - claim_id
+      - direction
+      - strength
+
+    properties:
+
+      claim_id:
+        type: string
+        pattern: "^claim_[A-Za-z0-9_-]+$"
+
+      direction:
+        type: string
+        enum:
+          - supports
+          - contradicts
+          - contextualizes
+
+      strength:
+        type: string
+        enum:
+          - weak
+          - moderate
+          - strong
+
+      rationale:
+        type: string
+        maxLength: 5000
+
+  quality:
+    type: object
+    additionalProperties: false
+
+    description: >
+      Structured Evidence quality assessment.
+      These dimensions are deliberately ordinal rather than
+      falsely precise numeric scores.
+
+    properties:
+
+      source_reliability:
+        $ref: "#/$defs/quality_level"
+
+      relevance:
+        $ref: "#/$defs/quality_level"
+
+      directness:
+        $ref: "#/$defs/quality_level"
+
+      independence:
+        $ref: "#/$defs/quality_level"
+
+      methodological_strength:
+        $ref: "#/$defs/quality_level"
+
+      recency:
+        $ref: "#/$defs/quality_level"
+
+      assessment_note:
+        type: string
+        maxLength: 5000
+
+  quality_level:
+    type: string
+    enum:
+      - unknown
+      - low
+      - medium
+      - high
+
+  temporal_context:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      observed_at:
+        type: string
+        format: date-time
+
+      valid_from:
+        type: string
+        format: date-time
+
+      valid_until:
+        type: string
+        format: date-time
+
+      period_description:
+        type: string
+        maxLength: 1000

@@ -1,0 +1,289 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/claim.schema.yaml"
+
+title: Claim
+description: >
+  Canonical representation of a proposition asserted within the
+  AI Organization. A Claim represents what is being asserted,
+  inferred, assumed, hypothesized or predicted independently of
+  the Evidence that may support or contradict it.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - id
+  - organization_id
+  - scope
+  - statement
+  - claim_type
+  - epistemic_status
+  - materiality
+  - asserted_by
+  - created_at
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  id:
+    type: string
+    pattern: "^claim_[A-Za-z0-9_-]+$"
+
+  organization_id:
+    type: string
+    pattern: "^org_[A-Za-z0-9_-]+$"
+
+  project_id:
+    type: string
+    pattern: "^proj_[A-Za-z0-9_-]+$"
+
+  scope:
+    type: string
+    enum:
+      - organization
+      - project
+
+  statement:
+    type: string
+    minLength: 1
+    maxLength: 5000
+    description: >
+      A single proposition stated clearly enough that it can,
+      in principle, be supported, contradicted or evaluated.
+
+  claim_type:
+    type: string
+    enum:
+      - factual_assertion
+      - observation
+      - inference
+      - hypothesis
+      - assumption
+      - prediction
+      - normative
+    description: >
+      Epistemic category of the proposition.
+      Classification as factual_assertion does not mean that the
+      proposition has been verified.
+
+  epistemic_status:
+    type: string
+    enum:
+      - unverified
+      - under_review
+      - partially_supported
+      - supported
+      - contested
+      - contradicted
+      - unresolved
+      - superseded
+
+  materiality:
+    type: string
+    enum:
+      - low
+      - medium
+      - high
+      - critical
+    description: >
+      Organizational importance of this Claim.
+      Higher materiality may trigger stronger Evidence requirements.
+
+  asserted_by:
+    $ref: "#/$defs/actor"
+
+  asserted_in_artifact_id:
+    type: string
+    pattern: "^art_[A-Za-z0-9_-]+$"
+
+  asserted_from_run_id:
+    type: string
+    pattern: "^run_[A-Za-z0-9_-]+$"
+
+  subject_refs:
+    type: array
+    description: >
+      Canonical entities to which this Claim materially refers.
+    items:
+      $ref: "#/$defs/subject_ref"
+    default: []
+
+  confidence:
+    $ref: "#/$defs/confidence"
+
+  assumptions:
+    type: array
+    items:
+      type: string
+      minLength: 1
+      maxLength: 3000
+    default: []
+
+  qualifiers:
+    type: array
+    description: >
+      Conditions, limitations or boundaries affecting interpretation.
+    items:
+      type: string
+      minLength: 1
+      maxLength: 3000
+    default: []
+
+  valid_time:
+    $ref: "#/$defs/valid_time"
+
+  supersedes_claim_id:
+    type: string
+    pattern: "^claim_[A-Za-z0-9_-]+$"
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type: string
+    format: date-time
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    additionalProperties: true
+    default: {}
+
+allOf:
+
+  - if:
+      properties:
+        scope:
+          const: project
+
+    then:
+      required:
+        - project_id
+
+  - if:
+      properties:
+        epistemic_status:
+          const: superseded
+
+    then:
+      required:
+        - supersedes_claim_id
+
+$defs:
+
+  actor:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor_type
+      - actor_id
+
+    properties:
+
+      actor_type:
+        type: string
+        enum:
+          - human
+          - agent
+          - workflow
+          - system
+          - tool
+          - external
+
+      actor_id:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      display_name:
+        type: string
+        maxLength: 300
+
+  subject_ref:
+    type: object
+    additionalProperties: false
+
+    required:
+      - subject_type
+      - subject_id
+
+    properties:
+
+      subject_type:
+        type: string
+        enum:
+          - organization
+          - project
+          - objective
+          - task
+          - artifact
+          - decision
+          - external_resource
+
+      subject_id:
+        type: string
+        minLength: 1
+        maxLength: 1000
+
+  confidence:
+    type: object
+    additionalProperties: false
+
+    required:
+      - value
+      - basis
+
+    properties:
+
+      value:
+        type: number
+        minimum: 0
+        maximum: 1
+
+      basis:
+        type: string
+        enum:
+          - human_judgment
+          - agent_estimate
+          - evidence_aggregation
+          - measurement
+          - other
+
+      note:
+        type: string
+        maxLength: 3000
+
+  valid_time:
+    type: object
+    additionalProperties: false
+
+    description: >
+      Temporal boundaries during which the Claim is intended to apply.
+
+    properties:
+
+      valid_from:
+        type: string
+        format: date-time
+
+      valid_until:
+        type: string
+        format: date-time
+
+      as_of:
+        type: string
+        format: date-time
