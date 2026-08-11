@@ -1,0 +1,442 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/memory.schema.yaml"
+
+title: Memory Record
+description: >
+  Canonical representation of deliberately retained contextual knowledge
+  intended to improve future organizational reasoning or execution.
+  Memory Records are not substitutes for canonical entities such as
+  Decisions, Evidence, Artifacts, Policies or Events.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - id
+  - organization_id
+  - scope
+  - memory_type
+  - content
+  - status
+  - provenance
+  - retention
+  - access
+  - created_at
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  id:
+    type: string
+    pattern: "^mem_[A-Za-z0-9_-]+$"
+
+  organization_id:
+    type: string
+    pattern: "^org_[A-Za-z0-9_-]+$"
+
+  project_id:
+    type: string
+    pattern: "^proj_[A-Za-z0-9_-]+$"
+
+  scope:
+    type: string
+    enum:
+      - project
+      - organization
+      - private
+
+  owner:
+    $ref: "#/$defs/actor"
+
+  memory_type:
+    type: string
+    enum:
+      - episodic
+      - semantic
+      - project_context
+      - organizational_context
+
+  content:
+    type: string
+    minLength: 1
+    maxLength: 10000
+    description: >
+      Concise contextual knowledge intended for future retrieval.
+      The content should not unnecessarily duplicate canonical source data.
+
+  status:
+    type: string
+    enum:
+      - active
+      - under_review
+      - superseded
+      - expired
+      - retracted
+      - archived
+
+  provenance:
+    $ref: "#/$defs/provenance"
+
+  epistemic_quality:
+    $ref: "#/$defs/epistemic_quality"
+
+  valid_time:
+    $ref: "#/$defs/valid_time"
+
+  retention:
+    $ref: "#/$defs/retention"
+
+  access:
+    $ref: "#/$defs/access"
+
+  retrieval:
+    $ref: "#/$defs/retrieval"
+
+  supersedes_memory_id:
+    type: string
+    pattern: "^mem_[A-Za-z0-9_-]+$"
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type: string
+    format: date-time
+
+  expires_at:
+    type: string
+    format: date-time
+
+  last_accessed_at:
+    type: string
+    format: date-time
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    additionalProperties: true
+    default: {}
+
+allOf:
+
+  - if:
+      properties:
+        scope:
+          const: project
+    then:
+      required:
+        - project_id
+
+  - if:
+      properties:
+        scope:
+          const: private
+    then:
+      required:
+        - owner
+
+  - if:
+      properties:
+        status:
+          const: superseded
+    then:
+      required:
+        - supersedes_memory_id
+
+$defs:
+
+  actor:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor_type
+      - actor_id
+
+    properties:
+
+      actor_type:
+        type: string
+        enum:
+          - human
+          - agent
+          - workflow
+          - system
+
+      actor_id:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      display_name:
+        type: string
+        maxLength: 300
+
+  entity_ref:
+    type: object
+    additionalProperties: false
+
+    required:
+      - ref_type
+      - ref_id
+
+    properties:
+
+      ref_type:
+        type: string
+        enum:
+          - project
+          - objective
+          - task
+          - run
+          - artifact
+          - claim
+          - evidence
+          - decision
+          - event
+          - memory
+          - evaluation
+          - lesson
+          - external_resource
+
+      ref_id:
+        type: string
+        minLength: 1
+        maxLength: 1000
+
+      relation:
+        type: string
+        enum:
+          - derived_from
+          - summarizes
+          - contextualizes
+          - learned_from
+          - references
+          - supersedes
+          - related_to
+
+  provenance:
+    type: object
+    additionalProperties: false
+
+    required:
+      - created_by
+      - source_refs
+
+    properties:
+
+      created_by:
+        $ref: "#/$defs/actor"
+
+      created_from_run_id:
+        type: string
+        pattern: "^run_[A-Za-z0-9_-]+$"
+
+      source_refs:
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/$defs/entity_ref"
+
+      derivation_method:
+        type: string
+        enum:
+          - direct_capture
+          - human_summary
+          - agent_summary
+          - evidence_synthesis
+          - outcome_analysis
+          - workflow_extraction
+          - imported
+          - other
+
+      note:
+        type: string
+        maxLength: 5000
+
+  epistemic_quality:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      status:
+        type: string
+        enum:
+          - unknown
+          - provisional
+          - supported
+          - contested
+          - validated
+
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+
+      evidence_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^evd_[A-Za-z0-9_-]+$"
+        default: []
+
+      claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^claim_[A-Za-z0-9_-]+$"
+        default: []
+
+      note:
+        type: string
+        maxLength: 3000
+
+  valid_time:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      valid_from:
+        type: string
+        format: date-time
+
+      valid_until:
+        type: string
+        format: date-time
+
+      as_of:
+        type: string
+        format: date-time
+
+  retention:
+    type: object
+    additionalProperties: false
+
+    required:
+      - retention_class
+
+    properties:
+
+      retention_class:
+        type: string
+        enum:
+          - short_term
+          - project_lifetime
+          - long_term
+          - indefinite
+
+      review_after_days:
+        type: integer
+        minimum: 1
+
+      deletion_allowed:
+        type: boolean
+        default: true
+
+      reason:
+        type: string
+        minLength: 1
+        maxLength: 3000
+        description: >
+          Explicit reason why this information should be retained.
+
+  access:
+    type: object
+    additionalProperties: false
+
+    required:
+      - sensitivity
+
+    properties:
+
+      sensitivity:
+        type: string
+        enum:
+          - public
+          - internal
+          - confidential
+          - restricted
+
+      allowed_actor_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      allowed_roles:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      prohibited_actor_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      purpose_limitations:
+        type: array
+        items:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        default: []
+
+  retrieval:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      salience:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+
+      keywords:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      retrieval_hint:
+        type: string
+        maxLength: 3000
+        description: >
+          Optional guidance describing when this Memory is useful.
+
+      embedding_ref:
+        type: string
+        description: >
+          Optional reference to an externally maintained vector
+          representation. The embedding itself is not canonical Memory.
+
+      retrieval_count:
+        type: integer
+        minimum: 0
+        default: 0
