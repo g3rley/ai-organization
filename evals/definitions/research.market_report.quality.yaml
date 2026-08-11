@@ -1,0 +1,206 @@
+schema_version: "0.1.0"
+
+id: evaldef_market_report_quality
+version: "0.1.0"
+
+name: Market Report Quality
+
+description: >
+  Evaluates structural integrity, Evidence accounting, market analysis
+  quality, source discipline and uncertainty calibration of a Market Report.
+
+status: active
+
+target:
+
+  target_type: artifact
+
+  artifact_type: research.market_report
+
+  target_schema_ref: >
+    schemas/artifact-types/research.market_report.schema.yaml
+
+evaluation_kind: quality
+method: mixed
+
+evaluator_requirements:
+
+  minimum_independence: same_agent_independent_run
+
+  preferred_independence: independent_model_family
+
+  required_capabilities:
+    - evidence.quality_assessment
+
+criteria:
+
+  - id: criterion_schema_validity
+
+    name: Schema Validity
+
+    method: deterministic
+    weight: 0.10
+    blocking: true
+
+    deterministic_check:
+      check_type: schema_validity
+
+
+  - id: criterion_reference_integrity
+
+    name: Canonical Reference Integrity
+
+    method: deterministic
+    weight: 0.10
+    blocking: true
+
+    deterministic_check:
+      check_type: reference_integrity
+
+
+  - id: criterion_material_claim_accounting
+
+    name: Material Claim Accounting
+
+    description: >
+      Material Claims must be linked to Evidence or explicitly represented
+      as unresolved Evidence gaps.
+
+    method: deterministic
+    weight: 0.20
+    blocking: false
+
+    deterministic_check:
+
+      check_type: material_claim_accounting
+
+      configuration:
+
+        acceptable_states:
+          - evidence_linked
+          - explicitly_unsupported
+          - evidence_gap_recorded
+
+
+  - id: criterion_source_quality
+
+    name: Source Quality
+
+    method: model_based
+    weight: 0.20
+
+    supporting_refs_required: true
+
+    rubric:
+
+      question: >
+        Are sources sufficiently authoritative, relevant, direct and
+        independent for the Claims they support?
+
+      pass_description: >
+        Material conclusions rely primarily on appropriate sources with
+        clear provenance and reasonable independence.
+
+      partial_description: >
+        Source quality is mixed or contains material indirect dependencies.
+
+      fail_description: >
+        Material conclusions depend primarily on weak, unverifiable,
+        inappropriate or circular sources.
+
+
+  - id: criterion_analysis_completeness
+
+    name: Market Analysis Completeness
+
+    method: model_based
+    weight: 0.15
+
+    rubric:
+
+      question: >
+        Does the report adequately cover the market dimensions required
+        by its assigned scope?
+
+      pass_description: >
+        Market boundaries, relevant segments, competitors or substitutes,
+        and important external factors are sufficiently addressed.
+
+      partial_description: >
+        The report is useful but one or more material dimensions remain weak.
+
+      fail_description: >
+        Major required market dimensions are absent or superficial.
+
+
+  - id: criterion_uncertainty_calibration
+
+    name: Estimate and Uncertainty Discipline
+
+    method: model_based
+    weight: 0.15
+
+    rubric:
+
+      question: >
+        Are estimates, ranges, assumptions and uncertainty represented
+        without fabricated precision?
+
+      pass_description: >
+        Estimates are transparent about methodology, assumptions and limits,
+        including stating insufficient data when appropriate.
+
+      partial_description: >
+        Some estimates are insufficiently qualified or overly precise.
+
+      fail_description: >
+        Material numerical or market conclusions imply precision unsupported
+        by the available Evidence.
+
+
+  - id: criterion_strategic_usefulness
+
+    name: Strategic Usefulness
+
+    method: model_based
+    weight: 0.10
+
+    rubric:
+
+      question: >
+        Does the report materially reduce uncertainty relevant to Product
+        or strategic Decisions?
+
+      pass_description: >
+        The Artifact identifies decision-relevant findings and remaining gaps.
+
+      partial_description: >
+        The research is informative but weakly connected to strategic uncertainty.
+
+      fail_description: >
+        The report provides information without materially improving
+        organizational understanding.
+
+scoring:
+
+  aggregation: weighted_mean
+  normalize_applicable_weights: true
+  minimum_score: 0.78
+
+verdict_policy:
+
+  pass_minimum_score: 0.78
+  needs_revision_minimum_score: 0.60
+  blocking_failure_verdict: fail
+  inconclusive_on_missing_required_evidence: true
+
+policy_refs:
+  - policy_evidence_baseline
+  - policy_cost_control_baseline
+
+created_at: "2026-08-11T18:53:00-03:00"
+
+tags:
+  - market
+  - research
+  - artifact-quality

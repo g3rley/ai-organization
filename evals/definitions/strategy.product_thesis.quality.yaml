@@ -1,0 +1,224 @@
+schema_version: "0.1.0"
+
+id: evaldef_product_thesis_quality
+version: "0.1.0"
+
+name: Product Thesis Quality
+
+description: >
+  Evaluates whether a Product Thesis is structurally valid,
+  strategically coherent, epistemically transparent and suitable
+  for continued discovery or Decision support.
+
+status: active
+
+target:
+
+  target_type: artifact
+
+  artifact_type: strategy.product_thesis
+
+  target_schema_ref: >
+    schemas/artifact-types/strategy.product_thesis.schema.yaml
+
+evaluation_kind: quality
+method: mixed
+
+evaluator_requirements:
+
+  minimum_independence: same_agent_independent_run
+
+  preferred_independence: independent_model_family
+
+  notes: >
+    High-impact Product Theses should preferentially receive review
+    from a model family different from the producing model.
+
+criteria:
+
+  - id: criterion_schema_validity
+
+    name: Schema Validity
+
+    description: >
+      Artifact content must conform to the Product Thesis content schema.
+
+    method: deterministic
+    weight: 0.10
+    blocking: true
+
+    deterministic_check:
+      check_type: schema_validity
+
+
+  - id: criterion_reference_integrity
+
+    name: Canonical Reference Integrity
+
+    description: >
+      Referenced Claims, Evidence and Artifacts must exist and be accessible.
+
+    method: deterministic
+    weight: 0.10
+    blocking: true
+
+    deterministic_check:
+      check_type: reference_integrity
+
+
+  - id: criterion_strategic_coherence
+
+    name: Strategic Coherence
+
+    description: >
+      Customer, problem, value proposition and strategic thesis should form
+      a coherent causal and commercial argument.
+
+    method: model_based
+    weight: 0.20
+
+    rubric:
+
+      question: >
+        Does the thesis connect the target customer, material problem,
+        proposed value and strategic rationale coherently?
+
+      pass_description: >
+        The components form a clear and internally consistent strategic thesis.
+
+      partial_description: >
+        The thesis is plausible but contains material logical gaps or ambiguity.
+
+      fail_description: >
+        The central components are disconnected, contradictory or insufficient
+        to define a coherent opportunity.
+
+
+  - id: criterion_alternative_quality
+
+    name: Strategic Alternative Quality
+
+    description: >
+      Material strategic choices should include meaningful alternatives rather
+      than artificial variants of the preferred option.
+
+    method: model_based
+    weight: 0.15
+
+    rubric:
+
+      question: >
+        Are the strategic alternatives genuinely distinct and decision-relevant?
+
+      pass_description: >
+        At least two materially different alternatives with explicit
+        trade-offs are considered.
+
+      partial_description: >
+        Alternatives exist but are weakly differentiated.
+
+      fail_description: >
+        Alternatives are missing, trivial or constructed only to justify
+        a predetermined recommendation.
+
+
+  - id: criterion_epistemic_transparency
+
+    name: Epistemic Transparency
+
+    description: >
+      Claims, assumptions and Evidence gaps should remain clearly distinguishable.
+
+    method: model_based
+    weight: 0.20
+
+    supporting_refs_required: true
+
+    rubric:
+
+      question: >
+        Does the thesis accurately distinguish supported Claims,
+        assumptions, hypotheses and unresolved Evidence gaps?
+
+      pass_description: >
+        Material uncertainty is explicit and unsupported assumptions
+        are not presented as established fact.
+
+      partial_description: >
+        Most uncertainty is visible but some assertions are insufficiently
+        qualified.
+
+      fail_description: >
+        Unsupported assumptions or speculation are presented as reliable facts.
+
+
+  - id: criterion_uncertainty_calibration
+
+    name: Uncertainty Calibration
+
+    method: model_based
+    weight: 0.15
+
+    rubric:
+
+      question: >
+        Is expressed confidence proportionate to the available Evidence?
+
+      pass_description: >
+        Confidence and recommendations appropriately reflect Evidence quality
+        and unresolved uncertainty.
+
+      partial_description: >
+        Confidence is somewhat stronger or weaker than available support.
+
+      fail_description: >
+        The Artifact expresses materially unjustified certainty.
+
+
+  - id: criterion_actionability
+
+    name: Discovery Actionability
+
+    method: model_based
+    weight: 0.10
+
+    rubric:
+
+      question: >
+        Does the thesis make the next material uncertainties and validation
+        priorities understandable?
+
+      pass_description: >
+        The organization can identify what should be investigated next.
+
+      partial_description: >
+        Some next steps can be inferred but priorities remain ambiguous.
+
+      fail_description: >
+        The Artifact does not meaningfully inform subsequent organizational work.
+
+scoring:
+
+  aggregation: weighted_mean
+  normalize_applicable_weights: true
+  minimum_score: 0.78
+
+verdict_policy:
+
+  pass_minimum_score: 0.78
+
+  needs_revision_minimum_score: 0.60
+
+  blocking_failure_verdict: fail
+
+  inconclusive_on_missing_required_evidence: true
+
+policy_refs:
+  - policy_evidence_baseline
+
+created_at: "2026-08-11T18:53:00-03:00"
+
+tags:
+  - strategy
+  - product
+  - artifact-quality

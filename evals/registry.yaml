@@ -1,0 +1,49 @@
+schema_version: "0.1.0"
+
+registry_version: "0.1.0"
+
+organization_id: org_main
+
+name: AI Organization Evaluation Registry
+
+status: active
+
+definitions:
+
+  - id: evaldef_product_thesis_quality
+    version: "0.1.0"
+
+    name: Product Thesis Quality
+
+    target:
+      target_type: artifact
+      artifact_type: strategy.product_thesis
+
+    definition_ref: >
+      evals/definitions/strategy.product_thesis.quality.yaml
+
+
+  - id: evaldef_market_report_quality
+    version: "0.1.0"
+
+    name: Market Report Quality
+
+    target:
+      target_type: artifact
+      artifact_type: research.market_report
+
+    definition_ref: >
+      evals/definitions/research.market_report.quality.yaml
+
+
+  - id: evaldef_evidence_review_quality
+    version: "0.1.0"
+
+    name: Evidence Review Quality
+
+    target:
+      target_type: artifact
+      artifact_type: review.evidence
+
+    definition_ref: >
+      evals/definitions/review.evidence.quality.yaml

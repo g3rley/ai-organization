@@ -1,0 +1,213 @@
+schema_version: "0.1.0"
+
+id: evaldef_evidence_review_quality
+version: "0.1.0"
+
+name: Evidence Review Quality
+
+description: >
+  Evaluates whether an Evidence Review adequately covers material Claims,
+  examines provenance and independence, detects contradictions and produces
+  appropriately calibrated epistemic conclusions.
+
+status: active
+
+target:
+
+  target_type: artifact
+
+  artifact_type: review.evidence
+
+  target_schema_ref: >
+    schemas/artifact-types/review.evidence.schema.yaml
+
+evaluation_kind: quality
+method: mixed
+
+evaluator_requirements:
+
+  minimum_independence: independent_model_family
+
+  preferred_independence: independent_model_family
+
+  required_capabilities:
+    - evidence.quality_assessment
+
+  notes: >
+    The Evidence Review should not normally be accepted solely on
+    self-assessment by the same producing model execution.
+
+criteria:
+
+  - id: criterion_schema_validity
+
+    name: Schema Validity
+
+    method: deterministic
+    weight: 0.10
+    blocking: true
+
+    deterministic_check:
+      check_type: schema_validity
+
+
+  - id: criterion_claim_scope_coverage
+
+    name: Material Claim Coverage
+
+    description: >
+      Every material Claim explicitly included in review scope should have
+      a corresponding assessment.
+
+    method: deterministic
+    weight: 0.20
+    blocking: true
+
+    deterministic_check:
+      check_type: claim_scope_coverage
+
+
+  - id: criterion_provenance_analysis
+
+    name: Provenance Analysis
+
+    method: model_based
+    weight: 0.20
+
+    supporting_refs_required: true
+
+    rubric:
+
+      question: >
+        Does the review adequately assess where material Evidence came from
+        and whether the sources are verifiable?
+
+      pass_description: >
+        Material Evidence has meaningful provenance assessment and relevant
+        provenance weaknesses are surfaced.
+
+      partial_description: >
+        Provenance is considered but material sources remain insufficiently examined.
+
+      fail_description: >
+        The review accepts Evidence largely without examining provenance.
+
+
+  - id: criterion_contradiction_detection
+
+    name: Contradictory Evidence Detection
+
+    method: model_based
+    weight: 0.15
+
+    rubric:
+
+      question: >
+        Does the review identify and preserve material Evidence that
+        contradicts important Claims?
+
+      pass_description: >
+        Material contradictions are identified and incorporated into
+        epistemic conclusions.
+
+      partial_description: >
+        Some conflicting information is acknowledged but incompletely analyzed.
+
+      fail_description: >
+        Material contradictory Evidence is ignored, suppressed or dismissed
+        without adequate rationale.
+
+
+  - id: criterion_independence_analysis
+
+    name: Source Independence Analysis
+
+    method: model_based
+    weight: 0.15
+
+    rubric:
+
+      question: >
+        Does the review detect when apparently distinct Evidence items derive
+        from the same underlying source?
+
+      pass_description: >
+        Common-source dependencies and synthetic consensus risks are
+        appropriately identified.
+
+      partial_description: >
+        Independence is considered but some dependencies remain unclear.
+
+      fail_description: >
+        Repeated derivative sources are materially misrepresented as
+        independent confirmation.
+
+
+  - id: criterion_epistemic_calibration
+
+    name: Epistemic Calibration
+
+    method: model_based
+    weight: 0.10
+
+    rubric:
+
+      question: >
+        Are recommended epistemic statuses proportionate to the actual
+        quality and direction of Evidence?
+
+      pass_description: >
+        Recommendations accurately distinguish supported, contested,
+        contradicted and unresolved Claims.
+
+      partial_description: >
+        Most assessments are reasonable but some confidence is poorly calibrated.
+
+      fail_description: >
+        The review materially overstates or understates what the Evidence permits.
+
+
+  - id: criterion_recommended_actions
+
+    name: Remediation Quality
+
+    method: model_based
+    weight: 0.10
+
+    rubric:
+
+      question: >
+        When Evidence is insufficient, are proposed next actions targeted
+        at resolving the material uncertainty?
+
+      pass_description: >
+        Recommended actions directly address the most important Evidence gaps.
+
+      partial_description: >
+        Recommendations are useful but poorly prioritized or overly broad.
+
+      fail_description: >
+        Recommendations do not meaningfully address the identified epistemic gaps.
+
+scoring:
+
+  aggregation: weighted_mean
+  normalize_applicable_weights: true
+  minimum_score: 0.85
+
+verdict_policy:
+
+  pass_minimum_score: 0.85
+  needs_revision_minimum_score: 0.70
+  blocking_failure_verdict: fail
+  inconclusive_on_missing_required_evidence: true
+
+policy_refs:
+  - policy_evidence_baseline
+
+created_at: "2026-08-11T18:53:00-03:00"
+
+tags:
+  - evidence
+  - epistemics
+  - artifact-quality
