@@ -1,0 +1,707 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/workflow.schema.yaml"
+
+title: Workflow Definition
+description: >
+  Canonical versioned definition of a reusable organizational process.
+  A Workflow coordinates deterministic, agentic and human work through
+  explicit states, steps, transitions, decision gates and termination rules.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - id
+  - version
+  - name
+  - status
+  - scope
+  - triggers
+  - initial_state
+  - states
+  - termination
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  id:
+    type: string
+    pattern: "^workflow_[A-Za-z0-9_-]+$"
+
+  version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+
+  name:
+    type: string
+    minLength: 1
+    maxLength: 300
+
+  description:
+    type: string
+    maxLength: 5000
+
+  status:
+    type: string
+    enum:
+      - draft
+      - active
+      - deprecated
+      - disabled
+
+  scope:
+    type: string
+    enum:
+      - organization
+      - project
+
+  applicable_project_types:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      enum:
+        - startup
+        - product
+        - research
+        - operations
+        - incident
+        - internal
+        - other
+    default: []
+
+  triggers:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/trigger"
+
+  initial_state:
+    type: string
+    minLength: 1
+    maxLength: 200
+
+  states:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/state"
+
+  global_constraints:
+    $ref: "#/$defs/global_constraints"
+
+  policies:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+    default: []
+
+  termination:
+    $ref: "#/$defs/termination"
+
+  evaluation:
+    $ref: "#/$defs/evaluation"
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type: string
+    format: date-time
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    additionalProperties: true
+    default: {}
+
+$defs:
+
+  trigger:
+    type: object
+    additionalProperties: false
+
+    required:
+      - trigger_type
+
+    properties:
+
+      trigger_type:
+        type: string
+        enum:
+          - human
+          - event
+          - schedule
+          - workflow
+          - system
+
+      event_pattern:
+        type: string
+        maxLength: 300
+
+      source_workflow_id:
+        type: string
+
+      description:
+        type: string
+        maxLength: 3000
+
+  state:
+    type: object
+    additionalProperties: false
+
+    required:
+      - id
+      - state_type
+      - steps
+
+    properties:
+
+      id:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*$"
+
+      name:
+        type: string
+        maxLength: 300
+
+      description:
+        type: string
+        maxLength: 5000
+
+      state_type:
+        type: string
+        enum:
+          - processing
+          - waiting
+          - decision
+          - terminal
+
+      entry_conditions:
+        type: array
+        items:
+          $ref: "#/$defs/condition"
+        default: []
+
+      steps:
+        type: array
+        items:
+          $ref: "#/$defs/step"
+        default: []
+
+      completion_conditions:
+        type: array
+        items:
+          $ref: "#/$defs/condition"
+        default: []
+
+      transitions:
+        type: array
+        items:
+          $ref: "#/$defs/transition"
+        default: []
+
+      timeout:
+        $ref: "#/$defs/timeout"
+
+  step:
+    type: object
+    additionalProperties: false
+
+    required:
+      - id
+      - step_type
+      - execution_mode
+
+    properties:
+
+      id:
+        type: string
+        pattern: "^step_[A-Za-z0-9_-]+$"
+
+      name:
+        type: string
+        maxLength: 300
+
+      description:
+        type: string
+        maxLength: 5000
+
+      step_type:
+        type: string
+        enum:
+          - create_task
+          - execute_task
+          - review_artifact
+          - evaluate
+          - decision_gate
+          - human_approval
+          - policy_check
+          - emit_event
+          - wait_for_event
+          - update_state
+          - invoke_subworkflow
+          - other
+
+      execution_mode:
+        type: string
+        enum:
+          - deterministic
+          - agentic
+          - human
+          - hybrid
+
+      required:
+        type: boolean
+        default: true
+
+      dependencies:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^step_[A-Za-z0-9_-]+$"
+        default: []
+
+      parallel_group:
+        type: string
+        maxLength: 200
+        description: >
+          Steps with the same parallel_group may execute concurrently
+          once their dependencies are satisfied.
+
+      task_template:
+        $ref: "#/$defs/task_template"
+
+      capability_requirements:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^[a-z][a-z0-9_.-]*$"
+        default: []
+
+      artifact_requirements:
+        type: array
+        items:
+          $ref: "#/$defs/artifact_requirement"
+        default: []
+
+      decision_requirement:
+        $ref: "#/$defs/decision_requirement"
+
+      human_approval:
+        $ref: "#/$defs/human_approval"
+
+      subworkflow:
+        $ref: "#/$defs/subworkflow"
+
+      policy_refs:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      completion_conditions:
+        type: array
+        items:
+          $ref: "#/$defs/condition"
+        default: []
+
+      failure_policy:
+        $ref: "#/$defs/failure_policy"
+
+  task_template:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      task_type:
+        type: string
+        enum:
+          - research
+          - analysis
+          - planning
+          - design
+          - implementation
+          - testing
+          - review
+          - verification
+          - decision_support
+          - communication
+          - operation
+          - remediation
+          - other
+
+      title_template:
+        type: string
+        maxLength: 500
+
+      purpose_template:
+        type: string
+        maxLength: 5000
+
+      priority:
+        type: string
+        enum:
+          - low
+          - normal
+          - high
+          - urgent
+
+      execution_mode:
+        type: string
+        enum:
+          - deterministic
+          - agentic
+          - human
+          - hybrid
+
+      required_capabilities:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^[a-z][a-z0-9_.-]*$"
+        default: []
+
+      expected_artifact_types:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^[a-z][a-z0-9_.-]*$"
+        default: []
+
+  artifact_requirement:
+    type: object
+    additionalProperties: false
+
+    required:
+      - artifact_type
+      - condition
+
+    properties:
+
+      artifact_type:
+        type: string
+        pattern: "^[a-z][a-z0-9_.-]*$"
+
+      condition:
+        type: string
+        enum:
+          - exists
+          - approved
+          - evaluated
+          - latest_revision_approved
+
+      minimum_count:
+        type: integer
+        minimum: 1
+        default: 1
+
+  decision_requirement:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      decision_type:
+        type: string
+        enum:
+          - strategic
+          - product
+          - technical
+          - financial
+          - operational
+          - security
+          - privacy
+          - regulatory
+          - governance
+          - go_no_go
+          - other
+
+      required_status:
+        type: string
+        enum:
+          - proposed
+          - under_review
+          - committed
+          - rejected
+
+      allowed_selected_options:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+  human_approval:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      required:
+        type: boolean
+        default: true
+
+      approval_type:
+        type: string
+        enum:
+          - proceed
+          - approve_artifact
+          - approve_decision
+          - approve_action
+          - approve_budget
+          - other
+
+      minimum_approvals:
+        type: integer
+        minimum: 1
+        default: 1
+
+      timeout_action:
+        type: string
+        enum:
+          - remain_waiting
+          - escalate
+          - cancel
+        default: remain_waiting
+
+  subworkflow:
+    type: object
+    additionalProperties: false
+
+    required:
+      - workflow_id
+
+    properties:
+
+      workflow_id:
+        type: string
+        pattern: "^workflow_[A-Za-z0-9_-]+$"
+
+      workflow_version:
+        type: string
+
+      wait_for_completion:
+        type: boolean
+        default: true
+
+  transition:
+    type: object
+    additionalProperties: false
+
+    required:
+      - to_state
+
+    properties:
+
+      id:
+        type: string
+        pattern: "^transition_[A-Za-z0-9_-]+$"
+
+      to_state:
+        type: string
+        minLength: 1
+
+      conditions:
+        type: array
+        items:
+          $ref: "#/$defs/condition"
+        default: []
+
+      priority:
+        type: integer
+        minimum: 0
+        default: 100
+
+      emit_event_type:
+        type: string
+        pattern: "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)+$"
+
+  condition:
+    type: object
+    additionalProperties: false
+
+    required:
+      - field
+      - operator
+      - value
+
+    properties:
+
+      field:
+        type: string
+        minLength: 1
+        maxLength: 500
+
+      operator:
+        type: string
+        enum:
+          - equals
+          - not_equals
+          - in
+          - not_in
+          - greater_than
+          - greater_than_or_equal
+          - less_than
+          - less_than_or_equal
+          - contains
+          - exists
+          - all
+          - any
+
+      value:
+        description: >
+          Comparison value interpreted according to the operator.
+
+  timeout:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      duration_seconds:
+        type: integer
+        minimum: 1
+
+      on_timeout:
+        type: string
+        enum:
+          - remain_waiting
+          - retry
+          - escalate
+          - fail
+          - transition
+
+      transition_to_state:
+        type: string
+
+  failure_policy:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      max_attempts:
+        type: integer
+        minimum: 1
+
+      on_failure:
+        type: string
+        enum:
+          - retry
+          - continue
+          - block
+          - escalate
+          - fail_workflow
+
+      escalation_target:
+        type: string
+        enum:
+          - orchestrator
+          - human
+          - specialist
+          - security
+          - governance
+          - reviewer
+
+  global_constraints:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      maximum_active_steps:
+        type: integer
+        minimum: 1
+
+      maximum_parallel_steps:
+        type: integer
+        minimum: 1
+
+      maximum_total_runs:
+        type: integer
+        minimum: 1
+
+      maximum_duration_seconds:
+        type: integer
+        minimum: 1
+
+      require_active_project:
+        type: boolean
+        default: true
+
+  termination:
+    type: object
+    additionalProperties: false
+
+    required:
+      - success_states
+      - failure_states
+
+    properties:
+
+      success_states:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          type: string
+
+      failure_states:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+
+      cancellation_allowed:
+        type: boolean
+        default: true
+
+      emit_completion_event:
+        type: boolean
+        default: true
+
+  evaluation:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      evaluation_required:
+        type: boolean
+        default: true
+
+      metrics:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      review_frequency:
+        type: string
+        enum:
+          - every_run
+          - every_completion
+          - sampled
+          - periodic
