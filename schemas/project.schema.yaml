@@ -1,27 +1,370 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/project.schema.yaml"
+
+title: Project
+description: >
+  Canonical definition of a bounded initiative inside the AI Organization.
+  A Project represents organizational intent and state, not conversation
+  history or execution logs.
+
 type: object
-name: project
+additionalProperties: false
+
 required:
+  - schema_version
   - id
+  - organization_id
   - name
-  - objective
-  - owner
+  - project_type
+  - status
   - created_at
+  - human_owner
+  - primary_objective
+  - scope
+  - autonomy
+
 properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+    description: Version of this Project schema.
+
   id:
     type: string
+    pattern: "^proj_[A-Za-z0-9_-]+$"
+    description: Stable unique identifier for the project.
+
+  organization_id:
+    type: string
+    pattern: "^org_[A-Za-z0-9_-]+$"
+    description: Organization that owns this project.
+
   name:
     type: string
-  objective:
+    minLength: 1
+    maxLength: 200
+    description: Human-readable project name.
+
+  description:
     type: string
-  owner:
+    maxLength: 5000
+    description: Concise description of the initiative.
+
+  project_type:
     type: string
+    enum:
+      - startup
+      - product
+      - research
+      - operations
+      - incident
+      - internal
+      - other
+
+  status:
+    type: string
+    enum:
+      - draft
+      - active
+      - paused
+      - completed
+      - cancelled
+      - archived
+
   created_at:
     type: string
     format: date-time
-  status:
+
+  updated_at:
     type: string
-    enum: [discovery, planning, execution, review, operations, completed]
+    format: date-time
+
+  human_owner:
+    $ref: "#/$defs/human_owner"
+
+  primary_objective:
+    $ref: "#/$defs/objective"
+
+  scope:
+    $ref: "#/$defs/scope"
+
+  constraints:
+    $ref: "#/$defs/constraints"
+
+  initial_hypotheses:
+    type: array
+    description: >
+      Explicit assumptions or hypotheses that existed when the project
+      was created. These are not treated as facts.
+    items:
+      $ref: "#/$defs/hypothesis"
+    default: []
+
+  risk:
+    $ref: "#/$defs/risk"
+
+  autonomy:
+    $ref: "#/$defs/autonomy"
+
+  workflow:
+    $ref: "#/$defs/workflow"
+
   tags:
     type: array
+    uniqueItems: true
     items:
       type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    description: >
+      Non-canonical extension metadata. Business logic must not depend
+      on undocumented fields stored here.
+    additionalProperties: true
+    default: {}
+
+$defs:
+
+  human_owner:
+    type: object
+    additionalProperties: false
+
+    required:
+      - id
+      - role
+
+    properties:
+
+      id:
+        type: string
+        description: Stable identifier of the human owner.
+
+      role:
+        type: string
+        description: Human role in relation to the project.
+
+      display_name:
+        type: string
+        maxLength: 200
+
+  objective:
+    type: object
+    additionalProperties: false
+
+    required:
+      - statement
+      - success_criteria
+
+    properties:
+
+      statement:
+        type: string
+        minLength: 1
+        maxLength: 3000
+        description: >
+          Desired outcome expressed as a state to achieve, not as
+          instructions describing how to perform the work.
+
+      success_criteria:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          minLength: 1
+          maxLength: 1000
+
+  scope:
+    type: object
+    additionalProperties: false
+
+    required:
+      - in_scope
+      - out_of_scope
+
+    properties:
+
+      in_scope:
+        type: array
+        items:
+          type: string
+          minLength: 1
+
+      out_of_scope:
+        type: array
+        items:
+          type: string
+          minLength: 1
+
+  constraints:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      deadline:
+        type: string
+        format: date-time
+
+      budget:
+        type: object
+        additionalProperties: false
+
+        required:
+          - currency
+          - maximum
+
+        properties:
+
+          currency:
+            type: string
+            pattern: "^[A-Z]{3}$"
+
+          maximum:
+            type: number
+            minimum: 0
+
+      regulatory:
+        type: array
+        items:
+          type: string
+
+      technical:
+        type: array
+        items:
+          type: string
+
+      data:
+        type: array
+        items:
+          type: string
+
+      other:
+        type: array
+        items:
+          type: string
+
+  hypothesis:
+    type: object
+    additionalProperties: false
+
+    required:
+      - id
+      - statement
+      - status
+
+    properties:
+
+      id:
+        type: string
+        pattern: "^hyp_[A-Za-z0-9_-]+$"
+
+      statement:
+        type: string
+        minLength: 1
+        maxLength: 3000
+
+      status:
+        type: string
+        enum:
+          - untested
+          - investigating
+          - supported
+          - weakened
+          - rejected
+          - inconclusive
+
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+
+  risk:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      level:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+
+      domains:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - financial
+            - legal
+            - regulatory
+            - privacy
+            - security
+            - safety
+            - reputational
+            - operational
+            - technical
+
+      notes:
+        type: array
+        items:
+          type: string
+
+  autonomy:
+    type: object
+    additionalProperties: false
+
+    required:
+      - level
+
+    properties:
+
+      level:
+        type: integer
+        minimum: 0
+        maximum: 4
+        description: >
+          0 = recommendation only.
+          1 = artifact preparation.
+          2 = limited reversible execution.
+          3 = bounded operational autonomy.
+          4 = expanded autonomy under explicit organizational policies.
+
+      human_approval_required_for:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      notes:
+        type: string
+        maxLength: 3000
+
+  workflow:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      definition_id:
+        type: string
+        description: Identifier of the workflow definition being used.
+
+      definition_version:
+        type: string
+
+      current_state:
+        type: string
+        description: Current state according to the selected workflow.
+
+      started_at:
+        type: string
+        format: date-time
