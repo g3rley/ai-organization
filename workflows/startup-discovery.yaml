@@ -1,0 +1,922 @@
+schema_version: "0.1.0"
+
+id: workflow_startup_discovery
+version: "0.1.0"
+
+name: Startup Discovery — Opportunity Screening
+
+description: >
+  Initial startup opportunity screening workflow that converts a bounded
+  human Project Objective into a structured Product Thesis, Market Report,
+  independent Evidence Review and an explicit Go/No-Go Decision about
+  whether to proceed to Customer Discovery.
+
+  A positive result does not represent full startup validation and does not
+  authorize product construction, spending or external commitments.
+
+status: active
+
+scope: project
+
+applicable_project_types:
+  - startup
+
+triggers:
+
+  - trigger_type: human
+    description: >
+      A human explicitly starts Startup Discovery for an active Project.
+
+  - trigger_type: event
+    event_pattern: project.created
+    description: >
+      May be activated when a newly created startup Project is ready
+      for structured discovery.
+
+initial_state: intake
+
+
+# ---------------------------------------------------------------------------
+# STATES
+# ---------------------------------------------------------------------------
+
+states:
+
+  # -------------------------------------------------------------------------
+  # INTAKE
+  # -------------------------------------------------------------------------
+
+  - id: intake
+
+    name: Discovery Intake
+
+    description: >
+      Confirm that the Project is active and that organizational governance
+      permits the discovery workflow to begin.
+
+    state_type: processing
+
+    steps:
+
+      - id: step_intake_policy_check
+
+        name: Discovery Policy Check
+
+        description: >
+          Evaluate applicable organization and Project Policies before
+          initiating agentic discovery work.
+
+        step_type: policy_check
+        execution_mode: deterministic
+
+        policy_refs:
+          - policy_authority_baseline
+          - policy_security_baseline
+          - policy_evidence_baseline
+          - policy_cost_control_baseline
+          - policy_escalation_baseline
+
+        completion_conditions:
+
+          - field: policy.discovery_execution
+            operator: equals
+            value: allowed
+
+        failure_policy:
+          max_attempts: 1
+          on_failure: escalate
+          escalation_target: orchestrator
+
+    completion_conditions:
+
+      - field: steps.step_intake_policy_check.completed
+        operator: equals
+        value: true
+
+    transitions:
+
+      - id: transition_intake_to_strategy
+
+        to_state: strategic_framing
+
+        conditions:
+
+          - field: policy.discovery_execution
+            operator: equals
+            value: allowed
+
+        emit_event_type: discovery.started
+
+
+  # -------------------------------------------------------------------------
+  # STRATEGIC FRAMING
+  # -------------------------------------------------------------------------
+
+  - id: strategic_framing
+
+    name: Strategic Framing
+
+    description: >
+      Convert the Project Objective into an explicit Product Thesis
+      containing customer, problem, value, assumptions, alternatives,
+      Evidence state and unresolved questions.
+
+    state_type: processing
+
+    steps:
+
+      - id: step_product_thesis
+
+        name: Produce Product Thesis
+
+        step_type: execute_task
+        execution_mode: agentic
+
+        capability_requirements:
+          - strategy.product
+          - strategy.opportunity_assessment
+
+        task_template:
+
+          task_type: analysis
+
+          title_template: >
+            Develop initial Product Thesis for the current startup Project
+
+          purpose_template: >
+            Convert the Project Objective into a structured Product Thesis.
+            Distinguish Claims, assumptions and Evidence gaps explicitly.
+            Do not treat the thesis as a committed Decision.
+
+          priority: high
+
+          execution_mode: agentic
+
+          required_capabilities:
+            - strategy.product
+            - strategy.opportunity_assessment
+
+          expected_artifact_types:
+            - strategy.product_thesis
+
+        policy_refs:
+          - policy_evidence_baseline
+
+        failure_policy:
+          max_attempts: 3
+          on_failure: escalate
+          escalation_target: orchestrator
+
+
+      - id: step_product_thesis_eval
+
+        name: Evaluate Product Thesis
+
+        description: >
+          Apply the canonical Product Thesis Evaluation Definition to the
+          Artifact produced by the previous Step.
+
+        step_type: evaluate
+        execution_mode: hybrid
+
+        dependencies:
+          - step_product_thesis
+
+        evaluation_definition_refs:
+          - evaldef_product_thesis_quality
+
+        evaluation_target:
+
+          target_type: artifact
+          selection: output_of_step
+          source_step_id: step_product_thesis
+          artifact_type: strategy.product_thesis
+
+        artifact_requirements:
+
+          - artifact_type: strategy.product_thesis
+            condition: exists
+            minimum_count: 1
+
+        policy_refs:
+          - policy_evidence_baseline
+
+        failure_policy:
+          max_attempts: 2
+          on_failure: escalate
+          escalation_target: orchestrator
+
+    transitions:
+
+      - id: transition_strategy_to_market
+
+        to_state: market_research
+
+        conditions:
+
+          - field: evaluations.step_product_thesis_eval.verdict
+            operator: equals
+            value: pass
+
+        emit_event_type: discovery.product_thesis_accepted
+
+
+      - id: transition_strategy_revision
+
+        to_state: strategic_framing
+
+        conditions:
+
+          - field: evaluations.step_product_thesis_eval.verdict
+            operator: equals
+            value: needs_revision
+
+        emit_event_type: discovery.product_thesis_revision_required
+
+
+      - id: transition_strategy_failed
+
+        to_state: workflow_failed
+
+        conditions:
+
+          - field: evaluations.step_product_thesis_eval.verdict
+            operator: equals
+            value: fail
+
+
+  # -------------------------------------------------------------------------
+  # MARKET RESEARCH
+  # -------------------------------------------------------------------------
+
+  - id: market_research
+
+    name: Market Research
+
+    description: >
+      Investigate the external market environment relevant to the current
+      Product Thesis.
+
+    state_type: processing
+
+    steps:
+
+      - id: step_market_research
+
+        name: Produce Market Report
+
+        step_type: execute_task
+        execution_mode: agentic
+
+        capability_requirements:
+          - market.research
+          - market.segmentation
+          - competitor.analysis
+
+        artifact_requirements:
+
+          - artifact_type: strategy.product_thesis
+            condition: exists
+
+        task_template:
+
+          task_type: research
+
+          title_template: >
+            Research the market relevant to the current Product Thesis
+
+          purpose_template: >
+            Produce an evidence-linked Market Report covering market
+            boundaries, relevant segments, competitors and substitutes,
+            useful market estimates when defensible, important trends,
+            Evidence gaps and uncertainty.
+
+          priority: high
+
+          execution_mode: agentic
+
+          required_capabilities:
+            - market.research
+            - market.segmentation
+            - competitor.analysis
+
+          expected_artifact_types:
+            - research.market_report
+
+        policy_refs:
+          - policy_evidence_baseline
+          - policy_cost_control_baseline
+
+        failure_policy:
+          max_attempts: 3
+          on_failure: escalate
+          escalation_target: orchestrator
+
+
+      - id: step_market_report_eval
+
+        name: Evaluate Market Report
+
+        step_type: evaluate
+        execution_mode: hybrid
+
+        dependencies:
+          - step_market_research
+
+        evaluation_definition_refs:
+          - evaldef_market_report_quality
+
+        evaluation_target:
+
+          target_type: artifact
+          selection: output_of_step
+          source_step_id: step_market_research
+          artifact_type: research.market_report
+
+        artifact_requirements:
+
+          - artifact_type: research.market_report
+            condition: exists
+            minimum_count: 1
+
+        policy_refs:
+          - policy_evidence_baseline
+
+        failure_policy:
+          max_attempts: 2
+          on_failure: escalate
+          escalation_target: orchestrator
+
+    transitions:
+
+      - id: transition_market_to_evidence
+
+        to_state: evidence_review
+
+        conditions:
+
+          - field: evaluations.step_market_report_eval.verdict
+            operator: equals
+            value: pass
+
+        emit_event_type: discovery.market_research_accepted
+
+
+      - id: transition_market_revision
+
+        to_state: market_research
+
+        conditions:
+
+          - field: evaluations.step_market_report_eval.verdict
+            operator: equals
+            value: needs_revision
+
+        emit_event_type: discovery.market_research_revision_required
+
+
+      - id: transition_market_failed
+
+        to_state: workflow_failed
+
+        conditions:
+
+          - field: evaluations.step_market_report_eval.verdict
+            operator: equals
+            value: fail
+
+
+  # -------------------------------------------------------------------------
+  # EVIDENCE REVIEW
+  # -------------------------------------------------------------------------
+
+  - id: evidence_review
+
+    name: Independent Evidence Review
+
+    description: >
+      Independently assess the material Claims and Evidence contained in
+      the Product Thesis and Market Report.
+
+    state_type: processing
+
+    steps:
+
+      - id: step_evidence_review
+
+        name: Produce Evidence Review
+
+        step_type: review_artifact
+        execution_mode: agentic
+
+        capability_requirements:
+          - evidence.verification
+          - evidence.quality_assessment
+          - evidence.gap_analysis
+          - evidence.synthesis
+
+        artifact_requirements:
+
+          - artifact_type: strategy.product_thesis
+            condition: exists
+
+          - artifact_type: research.market_report
+            condition: exists
+
+        task_template:
+
+          task_type: verification
+
+          title_template: >
+            Independently review material Claims and Evidence
+
+          purpose_template: >
+            Assess material Claims supporting the Product Thesis and Market
+            Report. Examine provenance, Evidence quality, source independence,
+            contradictions and material Evidence gaps. Produce an independent
+            Evidence Review without silently modifying canonical Claims.
+
+          priority: high
+
+          execution_mode: agentic
+
+          required_capabilities:
+            - evidence.verification
+            - evidence.quality_assessment
+            - evidence.gap_analysis
+            - evidence.synthesis
+
+          expected_artifact_types:
+            - review.evidence
+
+        policy_refs:
+          - policy_evidence_baseline
+
+        failure_policy:
+          max_attempts: 3
+          on_failure: escalate
+          escalation_target: orchestrator
+
+
+      - id: step_evidence_review_eval
+
+        name: Evaluate Evidence Review
+
+        step_type: evaluate
+        execution_mode: hybrid
+
+        dependencies:
+          - step_evidence_review
+
+        evaluation_definition_refs:
+          - evaldef_evidence_review_quality
+
+        evaluation_target:
+
+          target_type: artifact
+          selection: output_of_step
+          source_step_id: step_evidence_review
+          artifact_type: review.evidence
+
+        artifact_requirements:
+
+          - artifact_type: review.evidence
+            condition: exists
+
+        policy_refs:
+          - policy_evidence_baseline
+
+        failure_policy:
+          max_attempts: 2
+          on_failure: escalate
+          escalation_target: orchestrator
+
+    transitions:
+
+      - id: transition_evidence_ready
+
+        to_state: decision_preparation
+
+        conditions:
+
+          - field: evaluations.step_evidence_review_eval.verdict
+            operator: equals
+            value: pass
+
+          - field: artifacts.review.evidence.latest.body.overall_assessment.decision_readiness
+            operator: in
+            value:
+              - ready
+              - ready_with_caveats
+
+        emit_event_type: discovery.evidence_ready_for_decision
+
+
+      - id: transition_evidence_insufficient
+
+        to_state: insufficient_evidence
+
+        conditions:
+
+          - field: evaluations.step_evidence_review_eval.verdict
+            operator: equals
+            value: pass
+
+          - field: artifacts.review.evidence.latest.body.overall_assessment.decision_readiness
+            operator: in
+            value:
+              - additional_evidence_required
+              - not_ready
+
+        emit_event_type: discovery.additional_evidence_required
+
+
+      - id: transition_evidence_revision
+
+        to_state: evidence_review
+
+        conditions:
+
+          - field: evaluations.step_evidence_review_eval.verdict
+            operator: equals
+            value: needs_revision
+
+
+      - id: transition_evidence_failed
+
+        to_state: workflow_failed
+
+        conditions:
+
+          - field: evaluations.step_evidence_review_eval.verdict
+            operator: equals
+            value: fail
+
+
+  # -------------------------------------------------------------------------
+  # DECISION PREPARATION
+  # -------------------------------------------------------------------------
+
+  - id: decision_preparation
+
+    name: Prepare Discovery Go/No-Go Decision
+
+    description: >
+      Integrate the Product Thesis, Market Report and Evidence Review into
+      an updated strategic thesis and a formal Go/No-Go Decision proposal.
+
+    state_type: processing
+
+    steps:
+
+      - id: step_prepare_discovery_decision
+
+        name: Update Thesis and Prepare Decision Proposal
+
+        step_type: execute_task
+        execution_mode: agentic
+
+        capability_requirements:
+          - strategy.product
+          - strategy.scenario_analysis
+          - strategy.opportunity_assessment
+
+        artifact_requirements:
+
+          - artifact_type: strategy.product_thesis
+            condition: exists
+
+          - artifact_type: research.market_report
+            condition: exists
+
+          - artifact_type: review.evidence
+            condition: exists
+
+        task_template:
+
+          task_type: decision_support
+
+          title_template: >
+            Prepare discovery continuation Decision
+
+          purpose_template: >
+            Update the Product Thesis using the Market Report and Evidence
+            Review and propose a canonical go_no_go Decision.
+
+            The Decision must contain exactly these decision-relevant options:
+
+            opt_proceed_customer_discovery:
+            proceed to a dedicated Customer Discovery stage.
+
+            opt_stop:
+            stop investment in the current thesis.
+
+            Proceeding does not authorize implementation, production deployment,
+            external spending or product launch.
+
+          priority: high
+
+          execution_mode: agentic
+
+          required_capabilities:
+            - strategy.product
+            - strategy.scenario_analysis
+            - strategy.opportunity_assessment
+
+          expected_artifact_types:
+            - strategy.product_thesis
+
+        policy_refs:
+          - policy_evidence_baseline
+          - policy_authority_baseline
+
+        failure_policy:
+          max_attempts: 3
+          on_failure: escalate
+          escalation_target: orchestrator
+
+
+      - id: step_final_thesis_eval
+
+        name: Evaluate Final Product Thesis
+
+        step_type: evaluate
+        execution_mode: hybrid
+
+        dependencies:
+          - step_prepare_discovery_decision
+
+        evaluation_definition_refs:
+          - evaldef_product_thesis_quality
+
+        evaluation_target:
+
+          target_type: artifact
+          selection: output_of_step
+          source_step_id: step_prepare_discovery_decision
+          artifact_type: strategy.product_thesis
+
+        artifact_requirements:
+
+          - artifact_type: strategy.product_thesis
+            condition: exists
+
+        policy_refs:
+          - policy_evidence_baseline
+
+    transitions:
+
+      - id: transition_decision_prepared
+
+        to_state: human_decision
+
+        conditions:
+
+          - field: evaluations.step_final_thesis_eval.verdict
+            operator: equals
+            value: pass
+
+        emit_event_type: discovery.go_no_go_proposed
+
+
+      - id: transition_decision_revision
+
+        to_state: decision_preparation
+
+        conditions:
+
+          - field: evaluations.step_final_thesis_eval.verdict
+            operator: equals
+            value: needs_revision
+
+
+      - id: transition_decision_preparation_failed
+
+        to_state: workflow_failed
+
+        conditions:
+
+          - field: evaluations.step_final_thesis_eval.verdict
+            operator: equals
+            value: fail
+
+
+  # -------------------------------------------------------------------------
+  # HUMAN DECISION
+  # -------------------------------------------------------------------------
+
+  - id: human_decision
+
+    name: Human Discovery Decision
+
+    description: >
+      Require explicit human approval before committing the discovery
+      continuation Decision.
+
+    state_type: decision
+
+    steps:
+
+      - id: step_human_go_no_go_approval
+
+        name: Human Go/No-Go Approval
+
+        step_type: human_approval
+        execution_mode: human
+
+        human_approval:
+
+          required: true
+
+          approval_type: approve_decision
+
+          minimum_approvals: 1
+
+          timeout_action: remain_waiting
+
+        policy_refs:
+          - policy_authority_baseline
+
+
+      - id: step_go_no_go_gate
+
+        name: Verify Committed Go/No-Go Decision
+
+        step_type: decision_gate
+        execution_mode: deterministic
+
+        dependencies:
+          - step_human_go_no_go_approval
+
+        decision_requirement:
+
+          decision_type: go_no_go
+
+          required_status: committed
+
+          allowed_selected_options:
+            - opt_proceed_customer_discovery
+            - opt_stop
+
+        policy_refs:
+          - policy_authority_baseline
+          - policy_evidence_baseline
+
+    transitions:
+
+      - id: transition_proceed_customer_discovery
+
+        to_state: ready_for_customer_discovery
+
+        conditions:
+
+          - field: decisions.go_no_go.latest.selected_option_id
+            operator: equals
+            value: opt_proceed_customer_discovery
+
+        emit_event_type: discovery.ready_for_customer_discovery
+
+
+      - id: transition_stop
+
+        to_state: stopped
+
+        conditions:
+
+          - field: decisions.go_no_go.latest.selected_option_id
+            operator: equals
+            value: opt_stop
+
+        emit_event_type: discovery.stopped
+
+
+  # -------------------------------------------------------------------------
+  # TERMINAL STATES
+  # -------------------------------------------------------------------------
+
+  - id: ready_for_customer_discovery
+
+    name: Ready for Customer Discovery
+
+    description: >
+      Opportunity screening completed successfully and the human owner
+      committed a Decision to proceed to Customer Discovery.
+
+    state_type: terminal
+    steps: []
+
+
+  - id: insufficient_evidence
+
+    name: Insufficient Evidence
+
+    description: >
+      The workflow completed its current screening scope but available
+      Evidence is insufficient for a responsible continuation Decision.
+
+    state_type: terminal
+    steps: []
+
+
+  - id: stopped
+
+    name: Thesis Stopped
+
+    description: >
+      The screening process completed and the committed human Decision
+      was not to continue investing in the current thesis.
+
+    state_type: terminal
+    steps: []
+
+
+  - id: workflow_failed
+
+    name: Workflow Failure
+
+    description: >
+      The organizational process could not complete because of execution,
+      validation, Policy or unrecoverable runtime failure.
+
+    state_type: terminal
+    steps: []
+
+
+# ---------------------------------------------------------------------------
+# GLOBAL GOVERNANCE
+# ---------------------------------------------------------------------------
+
+global_constraints:
+
+  maximum_active_steps: 3
+
+  maximum_parallel_steps: 2
+
+  maximum_total_runs: 16
+
+  maximum_duration_seconds: 1209600
+
+  require_active_project: true
+
+
+policies:
+
+  - policy_authority_baseline
+  - policy_security_baseline
+  - policy_evidence_baseline
+  - policy_cost_control_baseline
+  - policy_escalation_baseline
+
+
+# ---------------------------------------------------------------------------
+# TERMINATION
+# ---------------------------------------------------------------------------
+
+termination:
+
+  success_states:
+
+    - ready_for_customer_discovery
+    - insufficient_evidence
+    - stopped
+
+  failure_states:
+
+    - workflow_failed
+
+  cancellation_allowed: true
+
+  emit_completion_event: true
+
+
+# ---------------------------------------------------------------------------
+# WORKFLOW EVALUATION
+# ---------------------------------------------------------------------------
+
+evaluation:
+
+  evaluation_required: true
+
+  metrics:
+
+    - workflow.completion_rate
+    - workflow.total_cost
+    - workflow.total_duration
+    - workflow.agentic_run_count
+    - workflow.human_intervention_count
+    - workflow.revision_loop_count
+    - workflow.evidence_readiness
+    - workflow.decision_reversal_rate
+
+  review_frequency: every_completion
+
+
+created_at: "2026-08-11T18:59:00-03:00"
+
+tags:
+
+  - startup
+  - discovery
+  - opportunity-screening
+  - evidence
+  - human-in-the-loop

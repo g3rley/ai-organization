@@ -160,6 +160,56 @@ $defs:
         type: string
         maxLength: 3000
 
+    evaluation_target:
+      type: object
+      additionalProperties: false
+
+      required:
+        - target_type
+        - selection
+
+      properties:
+
+        target_type:
+          type: string
+          enum:
+            - artifact
+            - task
+            - run
+            - decision
+
+      selection:
+        type: string
+        enum:
+          - output_of_step
+          - latest_matching
+
+      source_step_id:
+        type: string
+        pattern: "^step_[A-Za-z0-9_-]+$"
+
+      artifact_type:
+        type: string
+        pattern: "^[a-z][a-z0-9_.-]*$"
+
+    allOf:
+
+      - if:
+          properties:
+            selection:
+              const: output_of_step
+        then:
+          required:
+            - source_step_id
+
+      - if:
+          properties:
+            target_type:
+              const: artifact
+        then:
+          required:
+            - artifact_type
+
   state:
     type: object
     additionalProperties: false
@@ -264,6 +314,19 @@ $defs:
           - agentic
           - human
           - hybrid
+      
+      evaluation_definition_refs:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^evaldef_[A-Za-z0-9_-]+$"
+        default: []
+        description: >
+          Evaluation Definitions that must be applied by this Step.
+
+      evaluation_target:
+        $ref: "#/$defs/evaluation_target"
 
       required:
         type: boolean
