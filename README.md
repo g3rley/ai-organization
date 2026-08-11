@@ -6,42 +6,40 @@ Este repositório define uma arquitetura operacional para governança, agentes, 
 
 ```text
 .
-├── constitution/
-│   ├── constitution.md
-│   └── principles.md
-│
+├── adrs/
+│   └── README.md
 ├── agents/
 │   ├── registry.yaml
 │   └── contracts/
-│
+├── constitution/
+│   ├── constitution.md
+│   └── principles.md
+├── evals/
 ├── policies/
 │   ├── authority.yaml
 │   ├── evidence.yaml
 │   ├── escalation.yaml
 │   ├── security.yaml
 │   └── cost-control.yaml
-│
+├── prompts/
 ├── schemas/
 │   ├── project.schema.yaml
 │   ├── task.schema.yaml
 │   ├── artifact.schema.yaml
 │   ├── decision.schema.yaml
 │   └── event.schema.yaml
-│
 ├── workflows/
 │   ├── startup-discovery/
 │   ├── product-development/
 │   └── operations/
-│
-├── evals/
-│
-├── prompts/
-│
-└── README.md
+├── LICENSE
+├── README.md
+└──
 ```
 
 ## Visão geral
 
+- `adrs/`: registra decisões arquiteturais e o contexto por trás das escolhas.
 - `constitution/`: define regras fundamentais e princípios.
 - `agents/`: registra agentes e seus contratos de atuação.
 - `policies/`: especifica autoridade, evidência, segurança, escalonamento e custo.
