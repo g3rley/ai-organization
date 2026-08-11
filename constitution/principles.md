@@ -1,31 +1,84 @@
-# Princípios da Organização de IA
+# AI Organization Design Principles
 
-## 1. Autoridade humana
-A decisão final e a responsabilidade legal e operacional permanecem com seres humanos.
+Version: 0.1.0
 
-## 2. Evidência antes de conclusão
-Nenhuma afirmação de sucesso, qualidade ou correção deve ser feita sem provas verificáveis.
+## P01 — Organization before agents
 
-## 3. Segurança por design
-Segurança, privacidade, conformidade e integridade dos dados são requisitos primários, não restrições opcionais.
+Design the organization before creating specialized agents.
 
-## 4. Escopo definido
-Todos os agentes devem operar dentro de limites explícitos de responsabilidade, permissões e objetivos.
+## P02 — Agent ≠ role ≠ skill ≠ tool ≠ workflow
 
-## 5. Transparência operacional
-Os passos, eventos, decisões e justificativas devem ser legíveis e rastreáveis.
+Use an agent only when autonomous reasoning provides material value.
 
-## 6. Eficácia com custo consciente
-A execução deve maximizar valor entregue com uso racional de recursos computacionais, financeiros e humanos.
+## P03 — State outside the model
 
-## 7. Iteração controlada
-O trabalho deve avançar em entregas incrementais, com validação antes de expansão do escopo.
+Persistent organizational state must remain external to LLM context.
 
-## 8. Resiliência e escalonamento
-Falhas, incertezas e exceções devem ser classificadas e conduzidas pela política de escalonamento correta.
+## P04 — Artifacts over conversations
 
-## 9. Reuso e padronização
-Padrões, contratos e workflows devem ser compartilhados para reduzir ruído, inconsistência e retrabalho.
+Important work should produce structured artifacts.
 
-## 10. Aprendizado contínuo
-Incidentes, métricas e decisões devem alimentar melhorias no sistema e no processo.
+## P05 — Context is compiled, not accumulated
+
+Provide each agent the minimum relevant context required for its task.
+
+## P06 — Lazy agents
+
+Agents should be activated by work or events, not remain permanently active.
+
+## P07 — Evidence proportional to impact
+
+Higher-impact decisions require stronger evidence.
+
+## P08 — Independence proportional to risk
+
+Critical proposals should receive independent review.
+
+## P09 — Determinism first
+
+Do not use probabilistic reasoning where deterministic execution is superior.
+
+## P10 — Explicit authority
+
+Agents should know what they may decide, execute, recommend and escalate.
+
+## P11 — Structured disagreement
+
+Disagreement must produce objections, counterproposals or evidence requests,
+not endless debate.
+
+## P12 — Stop conditions everywhere
+
+Every agentic process must have completion, timeout and escalation conditions.
+
+## P13 — Memory is curated
+
+Retrieval is not memory and conversation history is not organizational truth.
+
+## P14 — Learning is versioned
+
+Organizational learning must generate auditable changes.
+
+## P15 — Models are replaceable
+
+Organizational architecture must not depend on one model provider.
+
+## P16 — MCP exposes capabilities, not governance
+
+Tool connectivity must remain separate from organizational decision authority.
+
+## P17 — Minimize coordination tax
+
+Adding another agent must provide more expected value than coordination cost.
+
+## P18 — Human attention is expensive
+
+Escalate to humans only where human judgment has meaningful marginal value.
+
+## P19 — Autonomy is earned
+
+Expand autonomy only after evaluation demonstrates sufficient reliability.
+
+## P20 — Complexity must justify itself
+
+Do not implement infrastructure whose value has not yet been demonstrated.
