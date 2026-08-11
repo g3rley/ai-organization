@@ -1,68 +1,539 @@
-version: 1
-organization: ai-organization
+schema_version: "0.1.0"
+
+registry_version: "0.1.0"
+
+organization_id: org_main
+
+name: AI Organization Agent Registry
+
+description: >
+  Canonical registry of reusable Agent Definitions and organizational
+  capabilities. The Registry supports capability-based routing and does
+  not imply that registered Agents are continuously active.
+
+status: active
+
+
+# ---------------------------------------------------------------------------
+# CAPABILITY CATALOG
+# ---------------------------------------------------------------------------
+
+capabilities:
+
+  # Orchestration
+
+  - id: orchestration.task_decomposition
+    description: Decompose Objectives and Decisions into bounded Tasks.
+
+  - id: orchestration.task_routing
+    description: Route Tasks according to capabilities, authority and context.
+
+  - id: orchestration.workflow_coordination
+    description: Coordinate execution across Workflow states and dependencies.
+
+  - id: orchestration.escalation
+    description: Detect and route unresolved execution or authority problems.
+
+
+  # Organization architecture
+
+  - id: organization.agent_design
+    description: Design and revise Agent Definitions.
+
+  - id: organization.workflow_design
+    description: Design organizational Workflows.
+
+  - id: organization.policy_analysis
+    description: Analyze governance and Policy architecture.
+
+  - id: organization.system_evaluation
+    description: Analyze organizational performance and coordination structure.
+
+
+  # Strategy
+
+  - id: strategy.product
+    description: Define and assess Product strategy.
+
+  - id: strategy.business
+    description: Analyze business strategy and competitive positioning.
+
+  - id: strategy.scenario_analysis
+    description: Evaluate strategic scenarios and trade-offs.
+
+  - id: strategy.opportunity_assessment
+    description: Assess whether an opportunity merits further investment.
+
+
+  # Market
+
+  - id: market.research
+    description: Research markets and relevant external information.
+
+  - id: market.segmentation
+    description: Segment markets and identify relevant customer categories.
+
+  - id: market.sizing
+    description: Estimate market size and relevant opportunity ranges.
+
+  - id: competitor.analysis
+    description: Identify and analyze competitors and substitutes.
+
+
+  # Customer
+
+  - id: customer.research
+    description: Conduct or analyze qualitative customer research.
+
+  - id: customer.problem_validation
+    description: Assess whether proposed customer problems are materially real.
+
+  - id: customer.voice_analysis
+    description: Synthesize Voice-of-Customer information.
+
+  - id: customer.experiment_design
+    description: Design customer-facing validation experiments.
+
+
+  # Product
+
+  - id: product.requirements
+    description: Convert strategy into explicit product requirements.
+
+  - id: product.prioritization
+    description: Prioritize product work under constraints.
+
+  - id: product.roadmapping
+    description: Create and maintain product roadmaps.
+
+  - id: product.experimentation
+    description: Define product hypotheses and validation experiments.
+
+
+  # Design
+
+  - id: design.user_flow
+    description: Design user flows and interaction structure.
+
+  - id: design.prototype
+    description: Produce prototype and interface specifications.
+
+  - id: design.usability
+    description: Analyze usability and interaction risks.
+
+
+  # Finance / Business
+
+  - id: finance.unit_economics
+    description: Analyze CAC, LTV, margins and unit economics.
+
+  - id: finance.pricing
+    description: Analyze pricing alternatives and economics.
+
+  - id: finance.scenario_modeling
+    description: Produce financial scenarios and sensitivity analysis.
+
+  - id: business.model_analysis
+    description: Analyze business model viability and operating structure.
+
+
+  # Evidence
+
+  - id: evidence.verification
+    description: Verify material Claims against Evidence.
+
+  - id: evidence.quality_assessment
+    description: Assess provenance, independence and Evidence quality.
+
+  - id: evidence.gap_analysis
+    description: Identify material unsupported Claims and Evidence gaps.
+
+  - id: evidence.synthesis
+    description: Synthesize supporting and contradictory Evidence.
+
+
+  # Adversarial review
+
+  - id: redteam.thesis_review
+    description: Attempt to falsify strategic or product theses.
+
+  - id: redteam.assumption_attack
+    description: Identify hidden or fragile assumptions.
+
+  - id: redteam.failure_analysis
+    description: Identify plausible failure modes and neglected alternatives.
+
+
+  # Architecture
+
+  - id: architecture.system_design
+    description: Design software architecture and system boundaries.
+
+  - id: architecture.adr
+    description: Produce Architecture Decision Records.
+
+  - id: architecture.data_model
+    description: Design logical data architecture.
+
+  - id: architecture.integration
+    description: Design APIs and system integrations.
+
+
+  # Engineering
+
+  - id: engineering.implementation
+    description: Implement software changes.
+
+  - id: engineering.backend
+    description: Implement backend services and APIs.
+
+  - id: engineering.frontend
+    description: Implement client-facing application components.
+
+  - id: engineering.testing
+    description: Create and execute software tests.
+
+  - id: engineering.refactoring
+    description: Improve existing implementation without changing intended behavior.
+
+
+  # AI
+
+  - id: ai.agent_design
+    description: Design AI agent and orchestration implementation.
+
+  - id: ai.rag
+    description: Design retrieval-augmented generation systems.
+
+  - id: ai.context_engineering
+    description: Design model context and retrieval strategies.
+
+  - id: ai.evaluation
+    description: Design AI-specific evaluation systems.
+
+  - id: ai.model_routing
+    description: Analyze model selection and routing strategies.
+
+
+  # Security / privacy / risk
+
+  - id: security.architecture
+    description: Analyze application and infrastructure security.
+
+  - id: security.threat_modeling
+    description: Identify threats and required mitigations.
+
+  - id: privacy.analysis
+    description: Assess privacy and data-handling implications.
+
+  - id: risk.analysis
+    description: Assess operational and organizational risk.
+
+  - id: compliance.analysis
+    description: Perform preliminary compliance analysis.
+
+  - id: regulatory.triage
+    description: Detect when specialized regulatory expertise is required.
+
+
+  # Growth
+
+  - id: growth.strategy
+    description: Design acquisition, activation, retention and revenue strategy.
+
+  - id: growth.positioning
+    description: Define ICP, positioning and product marketing.
+
+  - id: growth.content
+    description: Produce or plan marketing communication and content.
+
+  - id: growth.sales
+    description: Analyze sales strategy and funnel design.
+
+  - id: growth.retention
+    description: Analyze customer success, retention and expansion.
+
+
+  # Data / decision science
+
+  - id: data.analysis
+    description: Analyze organizational or product data.
+
+  - id: data.metrics
+    description: Define and interpret metrics.
+
+  - id: data.product_analytics
+    description: Analyze product behavior and usage.
+
+  - id: decision.analysis
+    description: Transform data and Evidence into decision support.
+
+  - id: experiment.analysis
+    description: Analyze experimental results.
+
+
+# ---------------------------------------------------------------------------
+# AGENT REGISTRY
+# ---------------------------------------------------------------------------
+
 agents:
-  - id: orchestrator
+
+  - id: agent_orchestrator
     name: Orchestrator
-    role: coordena projeto, escopo, dependências e decisões de execução
-    authority: "project-level"
-    permissions:
-      - plan
-      - assign
-      - escalate
-      - monitor
-    output_contract: project
+    class: core
+    status: active
+    contract_ref: agents/contracts/orchestrator.yaml
 
-  - id: researcher
-    name: Researcher
-    role: coleta contexto, analisa mercado, requisitos e evidências
-    authority: "task-level"
-    permissions:
-      - read
-      - analyze
-      - synthesize
-      - propose
-    output_contract: artifact
+    capabilities:
+      - orchestration.task_decomposition
+      - orchestration.task_routing
+      - orchestration.workflow_coordination
+      - orchestration.escalation
 
-  - id: engineer
-    name: Engineer
-    role: implementa, integra e valida mudanças de software e automação
-    authority: "task-level"
-    permissions:
-      - implement
-      - test
-      - validate
-      - document
-    output_contract: artifact
+    activation:
+      default: workflow_or_task_driven
 
-  - id: reviewer
-    name: Reviewer
-    role: verifica qualidade, riscos e consistency antes da aprovação
-    authority: "approval-level"
-    permissions:
-      - review
-      - verify
-      - challenge
-      - reject
-    output_contract: decision
 
-  - id: operations
-    name: Operations
-    role: monitora incidentes, métricas e execução contínua do sistema
-    authority: "runtime-level"
-    permissions:
-      - observe
-      - triage
-      - remediate
-      - escalate
-    output_contract: event
+  - id: agent_ai_organization_architect
+    name: AI Organization Architect
+    class: core
+    status: active
+    contract_ref: agents/contracts/ai-organization-architect.yaml
 
-  - id: security
-    name: Security
-    role: avalia riscos de segurança, compliance e integridade
-    authority: "guardrail-level"
-    permissions:
-      - audit
-      - assess
-      - block
-      - escalate
-    output_contract: decision
+    capabilities:
+      - organization.agent_design
+      - organization.workflow_design
+      - organization.policy_analysis
+      - organization.system_evaluation
+      - ai.agent_design
+
+    activation:
+      default: governance_or_improvement_driven
+
+
+  - id: agent_product_strategist
+    name: Product Strategist
+    class: core
+    status: active
+    contract_ref: agents/contracts/product-strategist.yaml
+
+    capabilities:
+      - strategy.product
+      - strategy.business
+      - strategy.scenario_analysis
+      - strategy.opportunity_assessment
+
+    activation:
+      default: workflow_or_task_driven
+
+
+  - id: agent_evidence_reviewer
+    name: Evidence Reviewer
+    class: core
+    status: active
+    contract_ref: agents/contracts/evidence-reviewer.yaml
+
+    capabilities:
+      - evidence.verification
+      - evidence.quality_assessment
+      - evidence.gap_analysis
+      - evidence.synthesis
+
+    activation:
+      default: review_or_policy_driven
+
+
+  - id: agent_red_team
+    name: Red Team
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/red-team.yaml
+
+    capabilities:
+      - redteam.thesis_review
+      - redteam.assumption_attack
+      - redteam.failure_analysis
+
+    activation:
+      default: high_impact_review_only
+
+
+  - id: agent_market_intelligence
+    name: Market Intelligence
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/market-intelligence.yaml
+
+    capabilities:
+      - market.research
+      - market.segmentation
+      - market.sizing
+      - competitor.analysis
+
+    activation:
+      default: task_driven
+
+
+  - id: agent_customer_research
+    name: Customer Research
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/customer-research.yaml
+
+    capabilities:
+      - customer.research
+      - customer.problem_validation
+      - customer.voice_analysis
+      - customer.experiment_design
+
+    activation:
+      default: task_driven
+
+
+  - id: agent_product_designer
+    name: Product Designer
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/product-designer.yaml
+
+    capabilities:
+      - design.user_flow
+      - design.prototype
+      - design.usability
+
+    activation:
+      default: task_driven
+
+
+  - id: agent_business_finance
+    name: Business and Finance
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/business-finance.yaml
+
+    capabilities:
+      - business.model_analysis
+      - finance.unit_economics
+      - finance.pricing
+      - finance.scenario_modeling
+
+    activation:
+      default: task_driven
+
+
+  - id: agent_product_manager
+    name: Product Manager
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/product-manager.yaml
+
+    capabilities:
+      - product.requirements
+      - product.prioritization
+      - product.roadmapping
+      - product.experimentation
+
+    activation:
+      default: task_or_workflow_driven
+
+
+  - id: agent_software_architect
+    name: Software Architect
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/software-architect.yaml
+
+    capabilities:
+      - architecture.system_design
+      - architecture.adr
+      - architecture.data_model
+      - architecture.integration
+
+    activation:
+      default: task_driven
+
+
+  - id: agent_ai_engineer
+    name: AI Engineer
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/ai-engineer.yaml
+
+    capabilities:
+      - ai.agent_design
+      - ai.rag
+      - ai.context_engineering
+      - ai.evaluation
+      - ai.model_routing
+
+    activation:
+      default: task_driven
+
+
+  - id: agent_software_engineer
+    name: Software Engineer
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/software-engineer.yaml
+
+    capabilities:
+      - engineering.implementation
+      - engineering.backend
+      - engineering.frontend
+      - engineering.testing
+      - engineering.refactoring
+
+    activation:
+      default: task_driven
+
+
+  - id: agent_security_risk
+    name: Security, Privacy and Risk
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/security-risk.yaml
+
+    capabilities:
+      - security.architecture
+      - security.threat_modeling
+      - privacy.analysis
+      - risk.analysis
+      - compliance.analysis
+      - regulatory.triage
+
+    activation:
+      default: risk_or_task_driven
+
+
+  - id: agent_growth_strategy
+    name: Growth Strategy
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/growth-strategy.yaml
+
+    capabilities:
+      - growth.strategy
+      - growth.positioning
+      - growth.content
+      - growth.sales
+      - growth.retention
+
+    activation:
+      default: task_driven
+
+
+  - id: agent_data_decision_science
+    name: Data and Decision Science
+    class: specialist
+    status: active
+    contract_ref: agents/contracts/data-decision-science.yaml
+
+    capabilities:
+      - data.analysis
+      - data.metrics
+      - data.product_analytics
+      - decision.analysis
+      - experiment.analysis
+
+    activation:
+      default: task_or_event_driven
