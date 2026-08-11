@@ -1,0 +1,636 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://ai-organization.local/schemas/run.schema.yaml"
+
+title: Run
+description: >
+  Canonical representation of one concrete execution attempt of a Task.
+  A Run records the executor, runtime configuration, context, model and tool
+  usage, outputs, resource consumption, termination and evaluation results
+  associated with that attempt.
+
+type: object
+additionalProperties: false
+
+required:
+  - schema_version
+  - id
+  - organization_id
+  - project_id
+  - task_id
+  - attempt_number
+  - status
+  - executor
+  - started_at
+
+properties:
+
+  schema_version:
+    type: string
+    const: "0.1.0"
+
+  id:
+    type: string
+    pattern: "^run_[A-Za-z0-9_-]+$"
+    description: Stable unique identifier for this execution attempt.
+
+  organization_id:
+    type: string
+    pattern: "^org_[A-Za-z0-9_-]+$"
+
+  project_id:
+    type: string
+    pattern: "^proj_[A-Za-z0-9_-]+$"
+
+  task_id:
+    type: string
+    pattern: "^task_[A-Za-z0-9_-]+$"
+
+  attempt_number:
+    type: integer
+    minimum: 1
+    description: >
+      Sequential attempt number for this Task.
+
+  status:
+    type: string
+    enum:
+      - queued
+      - running
+      - waiting_for_human
+      - succeeded
+      - failed
+      - cancelled
+      - timed_out
+
+  executor:
+    $ref: "#/$defs/executor"
+
+  runtime:
+    $ref: "#/$defs/runtime"
+
+  context_snapshot:
+    $ref: "#/$defs/context_snapshot"
+
+  model_calls:
+    type: array
+    description: >
+      Individual model invocations performed during this Run.
+      Deterministic or human Runs may contain no model calls.
+    items:
+      $ref: "#/$defs/model_call"
+    default: []
+
+  tool_calls:
+    type: array
+    description: >
+      External tool invocations performed during this Run.
+    items:
+      $ref: "#/$defs/tool_call"
+    default: []
+
+  outputs:
+    $ref: "#/$defs/outputs"
+
+  resource_usage:
+    $ref: "#/$defs/resource_usage"
+
+  evaluation:
+    $ref: "#/$defs/evaluation_summary"
+
+  termination:
+    $ref: "#/$defs/termination"
+
+  started_at:
+    type: string
+    format: date-time
+
+  ended_at:
+    type: string
+    format: date-time
+
+  parent_run_id:
+    type: string
+    pattern: "^run_[A-Za-z0-9_-]+$"
+    description: >
+      Optional parent Run when this execution was spawned by another Run.
+
+  trace_id:
+    type: string
+    minLength: 1
+    maxLength: 300
+    description: >
+      Optional correlation identifier used by the observability system.
+
+  tags:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      minLength: 1
+      maxLength: 100
+    default: []
+
+  metadata:
+    type: object
+    description: >
+      Optional non-canonical extension metadata.
+    additionalProperties: true
+    default: {}
+
+allOf:
+
+  - if:
+      properties:
+        status:
+          enum:
+            - succeeded
+            - failed
+            - cancelled
+            - timed_out
+
+    then:
+      required:
+        - ended_at
+        - termination
+
+$defs:
+
+  actor:
+    type: object
+    additionalProperties: false
+
+    required:
+      - actor_type
+      - actor_id
+
+    properties:
+
+      actor_type:
+        type: string
+        enum:
+          - human
+          - agent
+          - workflow
+          - system
+          - tool
+
+      actor_id:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      display_name:
+        type: string
+        maxLength: 300
+
+  executor:
+    type: object
+    additionalProperties: false
+
+    required:
+      - execution_type
+      - actor
+
+    properties:
+
+      execution_type:
+        type: string
+        enum:
+          - deterministic
+          - agentic
+          - human
+          - hybrid
+
+      actor:
+        $ref: "#/$defs/actor"
+
+      agent_definition_id:
+        type: string
+        description: >
+          Agent Definition used for the execution, when applicable.
+
+      agent_definition_version:
+        type: string
+
+      workflow_definition_id:
+        type: string
+
+      workflow_definition_version:
+        type: string
+
+  runtime:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      orchestrator:
+        type: string
+        maxLength: 300
+
+      execution_environment:
+        type: string
+        maxLength: 300
+        description: >
+          Logical execution environment such as manual, local,
+          staging or production.
+
+      policy_version:
+        type: string
+
+      organization_version:
+        type: string
+
+      context_compiler_version:
+        type: string
+
+      started_by:
+        $ref: "#/$defs/actor"
+
+  context_snapshot:
+    type: object
+    additionalProperties: false
+
+    description: >
+      Auditable description of the context supplied to the executor.
+      Sensitive or large content should normally be referenced rather
+      than duplicated here.
+
+    properties:
+
+      project_manifest_ref:
+        type: string
+
+      task_ref:
+        type: string
+
+      artifact_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^art_[A-Za-z0-9_-]+$"
+        default: []
+
+      decision_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^dec_[A-Za-z0-9_-]+$"
+        default: []
+
+      claim_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^claim_[A-Za-z0-9_-]+$"
+        default: []
+
+      evidence_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^evd_[A-Za-z0-9_-]+$"
+        default: []
+
+      memory_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^mem_[A-Za-z0-9_-]+$"
+        default: []
+
+      policy_refs:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+        default: []
+
+      prompt_template_ref:
+        type: string
+        description: >
+          Reference to the prompt template used, when applicable.
+
+      context_hash:
+        type: string
+        pattern: "^sha256:[A-Fa-f0-9]{64}$"
+        description: >
+          Optional digest enabling verification of the compiled context
+          without persisting the full context here.
+
+  model_call:
+    type: object
+    additionalProperties: false
+
+    required:
+      - id
+      - provider
+      - model
+      - status
+
+    properties:
+
+      id:
+        type: string
+        pattern: "^modelcall_[A-Za-z0-9_-]+$"
+
+      provider:
+        type: string
+        minLength: 1
+        maxLength: 200
+
+      model:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      model_version:
+        type: string
+        maxLength: 300
+
+      purpose:
+        type: string
+        maxLength: 2000
+
+      status:
+        type: string
+        enum:
+          - succeeded
+          - failed
+          - cancelled
+          - timed_out
+
+      started_at:
+        type: string
+        format: date-time
+
+      ended_at:
+        type: string
+        format: date-time
+
+      input_tokens:
+        type: integer
+        minimum: 0
+
+      output_tokens:
+        type: integer
+        minimum: 0
+
+      cached_input_tokens:
+        type: integer
+        minimum: 0
+
+      reasoning_tokens:
+        type: integer
+        minimum: 0
+
+      monetary_cost:
+        $ref: "#/$defs/money"
+
+      request_ref:
+        type: string
+        description: >
+          Optional reference to externally stored request details.
+
+      response_ref:
+        type: string
+        description: >
+          Optional reference to externally stored response details.
+
+      error:
+        type: string
+        maxLength: 5000
+
+  tool_call:
+    type: object
+    additionalProperties: false
+
+    required:
+      - id
+      - tool_name
+      - status
+
+    properties:
+
+      id:
+        type: string
+        pattern: "^toolcall_[A-Za-z0-9_-]+$"
+
+      tool_name:
+        type: string
+        minLength: 1
+        maxLength: 300
+
+      provider:
+        type: string
+        maxLength: 300
+
+      protocol:
+        type: string
+        enum:
+          - mcp
+          - api
+          - local
+          - connector
+          - human
+          - other
+
+      purpose:
+        type: string
+        maxLength: 2000
+
+      status:
+        type: string
+        enum:
+          - succeeded
+          - failed
+          - cancelled
+          - timed_out
+
+      started_at:
+        type: string
+        format: date-time
+
+      ended_at:
+        type: string
+        format: date-time
+
+      input_ref:
+        type: string
+        description: >
+          Optional reference to tool input or request payload.
+
+      output_ref:
+        type: string
+        description: >
+          Optional reference to tool output or response payload.
+
+      monetary_cost:
+        $ref: "#/$defs/money"
+
+      error:
+        type: string
+        maxLength: 5000
+
+  outputs:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      artifact_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^art_[A-Za-z0-9_-]+$"
+        default: []
+
+      decision_proposal_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^dec_[A-Za-z0-9_-]+$"
+        default: []
+
+      emitted_event_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^evt_[A-Za-z0-9_-]+$"
+        default: []
+
+      state_changes:
+        type: array
+        items:
+          type: string
+          maxLength: 2000
+        default: []
+
+      external_action_refs:
+        type: array
+        items:
+          type: string
+        default: []
+
+      summary:
+        type: string
+        maxLength: 5000
+
+  resource_usage:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      total_input_tokens:
+        type: integer
+        minimum: 0
+
+      total_output_tokens:
+        type: integer
+        minimum: 0
+
+      total_model_calls:
+        type: integer
+        minimum: 0
+
+      total_tool_calls:
+        type: integer
+        minimum: 0
+
+      wall_time_ms:
+        type: integer
+        minimum: 0
+
+      total_monetary_cost:
+        $ref: "#/$defs/money"
+
+  evaluation_summary:
+    type: object
+    additionalProperties: false
+
+    properties:
+
+      status:
+        type: string
+        enum:
+          - not_evaluated
+          - pending
+          - passed
+          - failed
+          - mixed
+
+      evaluation_ids:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: "^eval_[A-Za-z0-9_-]+$"
+        default: []
+
+      aggregate_score:
+        type: number
+        minimum: 0
+        maximum: 1
+
+      notes:
+        type: string
+        maxLength: 5000
+
+  termination:
+    type: object
+    additionalProperties: false
+
+    required:
+      - reason
+
+    properties:
+
+      reason:
+        type: string
+        enum:
+          - completed
+          - execution_error
+          - validation_failure
+          - evaluation_failure
+          - timeout
+          - budget_exhausted
+          - max_attempts_reached
+          - policy_violation
+          - human_intervention
+          - cancelled
+          - critical_error
+
+      detail:
+        type: string
+        maxLength: 5000
+
+      retry_recommended:
+        type: boolean
+        default: false
+
+  money:
+    type: object
+    additionalProperties: false
+
+    required:
+      - currency
+      - amount
+
+    properties:
+
+      currency:
+        type: string
+        pattern: "^[A-Z]{3}$"
+
+      amount:
+        type: number
+        minimum: 0
